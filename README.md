@@ -9,8 +9,8 @@ Dane trzyma Firebase (Auth + Firestore, projekt `butla-91912`, baza `eur3`), str
 | Kolekcja | Zawartość |
 |---|---|
 | `users/{uid}` | `login`, `name`, `role` (`admin`/`user`), `color` |
-| `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast`, `yeastG`, `nutG`, `pulpaL`, `sugarKg`, `waterL`, `stage`, `color` |
-| `history/{id}` | `batchId`, `bn` (nazwa partii), `d` (data `RRRR-MM-DD`), `t` (treść), `ts`, `uid` (autor) |
+| `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast`, `yeastG`, `nutG`, `pulpaL`, `sugarKg`, `waterL`, `stage`, `stageDates` (`{nr etapu: RRRR-MM-DD}`), `order` (kolejność po przeciągnięciu), `color`, `clonedFrom` |
+| `history/{id}` | `batchId`, `bn` (nazwa partii), `d` (data `RRRR-MM-DD`), `t` (treść), `ts`, `uid` (kto zapisał), opcjonalnie `au`/`an` (pierwotny autor przy kopiach i imporcie), `imp` |
 | `meta/setup` | `adminUid` – znacznik, że konto administratora już istnieje |
 
 Login zamieniany jest na adres `login@butla.app` (to tylko identyfikator w Firebase, poczta nie istnieje).
@@ -42,3 +42,12 @@ Login zamieniany jest na adres `login@butla.app` (to tylko identyfikator w Fireb
 ## GitHub Pages
 
 Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings → Pages → Deploy from a branch → main / (root)**.
+
+## Szacunki w aplikacji
+
+- **Wzrost w burzliwej** – z pomiaru: 15 l pulpy + 6 kg cukru + 6 l wody (ok. 24,8 l) urosło o 3 l, czyli ok. 12% nastawu.
+  Aplikacja alarmuje, gdy nastaw po takim wzroście nie zmieści się w naczyniu, i podaje bezpieczną ilość.
+- **Alkohol** – 17 g cukru na litr ≈ 1% alkoholu; cukier z owoców: winogrona 180–190 g/l, jabłka i inne ok. 100 g/l.
+  Wynik jest ograniczony tolerancją drożdży (Malaga ok. 16%, Sherry ok. 17%, uniwersalne ok. 14%), nadmiar cukru zostaje jako słodycz.
+- **Czyste wino** – woda + rozpuszczony cukier + sok z pulpy (60–70% jej objętości), minus ok. 10% na osad.
+- **Etapy** – burzliwa 5–10 dni, cicha 3–6 tygodni, dojrzewanie 3–12 miesięcy; daty kolejnych etapów liczone od ostatniej znanej daty.
