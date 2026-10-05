@@ -1,7 +1,7 @@
 # Butla – dziennik winiarski
 
 Jednoplikowa aplikacja (`index.html`, bez frameworka) do prowadzenia partii wina:
-roczniki, dane nastawu, oś czasu etapów z notatkami, fuzje, dźwięk bąbelków i mnichów.
+roczniki, dane nastawu, oś czasu etapów z notatkami, fuzje, dźwięk bąbelków i podkład z mnichami.
 Dane trzyma Firebase (Auth + Firestore, projekt `butla-91912`, baza `eur3`), strona stoi na GitHub Pages: `https://guldorf.github.io/butla/`.
 
 ## Dane w Firestore
@@ -54,4 +54,4 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
 ## Oś czasu i dźwięk
 
 - **Etap** (prawa kolumna) to oś czasu: nastaw, burzliwa, cicha, dojrzewanie. Przy każdym etapie jest data jego początku, a przy przyszłych – szacunek. Pod etapem stoją notatki z jego okresu, przypisane po dacie. „+ Dodaj wpis” dopisuje notatkę między etapami.
-- **Dźwięk** (menu w nagłówku) jest syntezowany w przeglądarce (Web Audio, bez plików): bulknięcie przy każdym bąblu w rurce, drobne bąbelki w winie zsynchronizowane z animacją oraz mruczenie mnichów – chorał w skali doryckiej z bordunem i pogłosem. Ustawienia zapamiętują się w przeglądarce; przeglądarka pozwala zagrać dopiero po pierwszym kliknięciu na stronie.
+- **Dźwięk** (menu w nagłówku): bąbelki są syntezowane w przeglądarce (Web Audio) – bulknięcie przy każdym bąblu w rurce i drobne bąbelki w winie, zsynchronizowane z animacją. Podkład „Mnisi” to film YouTube „Tibetan Monks – Tashilhunpo Monastery Chant” (kanał Mantraon, `LksBIDL6E2U`), osadzony oficjalnym odtwarzaczem w zapętleniu. Zasady YouTube wymagają widocznego odtwarzacza (min. 200×200 px), więc w czasie grania stoi w prawym dolnym rogu; × wyłącza mnichów. Ustawienia zapamiętują się w przeglądarce, a dźwięk rusza po pierwszym kliknięciu na stronie.
