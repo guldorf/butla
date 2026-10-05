@@ -1,0 +1,1221 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Butla – dziennik winiarski</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍷</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#E2E8E1; --surface:#F3F5F0; --ink:#2A1A2E; --muted:#5D5562; --line:#C4CDC2;
+  --glass:#6C897C; --glass-fill:rgba(150,185,168,.16); --on-ink:#F3F5F0; --warn:#9A3B1E;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#172019; --surface:#202A23; --ink:#EEE6EF; --muted:#A99FAC; --line:#344038;
+    --glass:#8DB3A1; --glass-fill:rgba(141,179,161,.10); --on-ink:#172019; --warn:#E59A7C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#172019; --surface:#202A23; --ink:#EEE6EF; --muted:#A99FAC; --line:#344038;
+  --glass:#8DB3A1; --glass-fill:rgba(141,179,161,.10); --on-ink:#172019; --warn:#E59A7C; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:1440px;margin:0 auto;padding:26px 20px 48px}
+h1,h2,h3{font-family:"Young Serif",Georgia,"Times New Roman",serif;font-weight:400}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
+header h1{font-size:clamp(30px,4.5vw,44px);line-height:1.1;margin:0}
+header p{margin:4px 0 0;color:var(--muted);max-width:56ch}
+.io{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.batches{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:8px 15px 8px 10px;border-radius:999px;
+  border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.chip .sw{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
+.chip small{color:var(--muted);font-size:13px}
+.chip[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 1.5px var(--c);font-weight:600}
+.chip.add{border-style:dashed;padding-left:15px}
+.chip.small{padding:5px 12px;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.years{display:flex;flex-wrap:wrap;gap:4px;margin:20px 0 0}
+.yr{appearance:none;font:inherit;font-family:"Young Serif",Georgia,serif;font-size:18px;padding:4px 12px;border-radius:8px;
+  border:0;background:none;color:var(--muted);cursor:pointer}
+.yr small{font-family:"Instrument Sans",system-ui,sans-serif;font-size:12px;margin-left:4px}
+.yr[aria-selected="true"]{background:var(--ink);color:var(--on-ink)}
+.tabs{display:flex;gap:2px;margin:18px 0 22px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;
+  padding:10px 14px;font:inherit;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:32px;align-items:start}
+@media (max-width:1180px){.layout{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}.vessel{order:-1;position:static!important}}
+.block{margin-bottom:30px}
+.block h2{font-size:21px;margin:0 0 12px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.full{grid-column:1/-1}
+@media (max-width:480px){.fields{grid-template-columns:1fr}}
+.field>label,.field>.lab{display:block;font-size:14px;color:var(--muted);margin-bottom:4px}
+input[type=text],input[type=number],input[type=date],input[type=password],select,textarea{width:100%;font:inherit;color:var(--ink);
+  padding:9px 11px;border-radius:9px;border:1.5px solid var(--line);background:var(--surface)}
+textarea{font-family:ui-monospace,Consolas,monospace;font-size:13px;min-height:180px}
+.stepper{display:flex;gap:6px}
+.stepper input{text-align:center;min-width:0}
+.stepper button{flex:none;width:42px;border-radius:9px;border:1.5px solid var(--line);background:var(--surface);
+  color:var(--ink);font:inherit;font-size:20px;cursor:pointer}
+.hint{font-size:13px;color:var(--muted);margin-top:4px}
+.steps{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.steps li{font-size:13px;line-height:1.3;color:var(--muted);padding-top:8px;border-top:3px solid var(--line)}
+.steps li.done{border-top-color:var(--muted)}
+.steps li.now{border-top-color:var(--ink);color:var(--ink);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card h3{font-size:19px;margin:0 0 2px}
+.card .time{font-size:14px;color:var(--muted);margin:0 0 8px}
+.card p{margin:0;max-width:62ch}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.btn{appearance:none;font:inherit;font-weight:600;padding:10px 18px;border-radius:10px;cursor:pointer;
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--on-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.small{padding:7px 12px;font-size:14px}
+.btn.danger{background:transparent;color:var(--warn);border-color:var(--line)}
+.btn:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.empty{color:var(--muted);margin:0}
+.rows{display:grid;gap:12px}
+.row{display:grid;grid-template-columns:140px 1fr 92px;align-items:center;gap:12px}
+.row label{display:flex;align-items:center;gap:8px;min-width:0}
+.row .sw{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.row output{text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.status{margin:16px 0 0;padding:12px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.status.bad{color:var(--warn)}
+.vessel{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:14px 10px 10px;
+  position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
+.vessel svg{display:block;width:100%;height:auto;max-height:70vh}
+.vessel .cap{text-align:center;font-size:14px;color:var(--muted);margin:4px 8px 2px}
+.hidden{display:none!important}
+/* historia */
+.side{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 16px 8px;
+  position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+@media (max-width:1180px){.side{position:static;max-height:none}}
+.side h2{font-size:21px;margin:0 0 10px}
+.side .addrow{display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0 4px}
+.side .addrow .two{display:grid;grid-template-columns:1fr auto;gap:8px}
+.hlist{overflow-y:auto;margin:10px -6px 0;padding:0 6px}
+.day{font-family:"Young Serif",Georgia,serif;font-size:15px;color:var(--muted);margin:14px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.day:first-child{margin-top:0}
+.he{display:grid;grid-template-columns:28px 1fr auto;gap:10px;padding:8px 0;align-items:start}
+.he+.he{border-top:1px dashed var(--line)}
+.he .meta{font-size:13px;color:var(--muted)}
+.he .meta b{color:var(--ink);font-weight:600}
+.he .txt{overflow-wrap:anywhere}
+.he .bn{display:inline-flex;align-items:center;gap:5px;font-size:13px}
+.he .bn i{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block}
+.he .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+.av{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;
+  font-size:12px;font-weight:600;flex:none;letter-spacing:.02em}
+.me{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:999px;border:1.5px solid var(--line);
+  background:var(--surface);color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
+/* ekrany startowe */
+.screen{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.panel{width:100%;max-width:440px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
+.panel.wide{max-width:640px}
+.panel h1{font-size:34px;margin:0 0 4px}
+.panel p{color:var(--muted);margin:0 0 16px}
+.panel .field{margin-bottom:12px}
+.err{color:var(--warn);font-size:14px;min-height:1.5em;margin:6px 0 0}
+.link{background:none;border:0;padding:0;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;cursor:pointer}
+ol.howto{margin:0 0 14px;padding-left:20px;color:var(--muted);font-size:14px}
+/* okno użytkowników */
+dialog{border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);padding:22px;width:min(560px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog h2{font-size:22px;margin:0 0 12px}
+dialog h3{font-size:17px;margin:18px 0 8px}
+.ulist{list-style:none;margin:0;padding:0}
+.ulist li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.ulist small{color:var(--muted)}
+.uform{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:480px){.uform{grid-template-columns:1fr}}
+.emptyState{text-align:center;padding:40px 16px}
+.emptyState .actions{justify-content:center}
+</style>
+</head>
+<body>
+
+<!-- ===== ekrany startowe ===== -->
+<div class="screen hidden" id="scrConfig">
+  <div class="panel wide">
+    <h1>Butla</h1>
+    <p>Brak konfiguracji Firebase. Wklej obiekt <code>firebaseConfig</code> z konsoli Firebase.</p>
+    <ol class="howto">
+      <li>Konsola Firebase → ustawienia projektu (koło zębate) → Twoje aplikacje → aplikacja web.</li>
+      <li>Skopiuj cały blok <code>const firebaseConfig = {…}</code> i wklej poniżej.</li>
+      <li>Na stałe wpisz go w stałą <code>FIREBASE_CONFIG</code> w index.html (patrz README).</li>
+    </ol>
+    <textarea id="cfgIn" placeholder='const firebaseConfig = {
+  apiKey: "…",
+  authDomain: "….firebaseapp.com",
+  projectId: "…",
+  …
+};'></textarea>
+    <p class="err" id="cfgErr"></p>
+    <div class="actions"><button class="btn" id="cfgSave">Zapisz i połącz</button></div>
+  </div>
+</div>
+
+<div class="screen hidden" id="scrLoading"><p class="empty" id="loadMsg">Łączenie…</p></div>
+
+<div class="screen hidden" id="scrLogin">
+  <form class="panel" id="loginForm" autocomplete="on">
+    <h1>Butla</h1>
+    <p>Dziennik winiarski. Zaloguj się, żeby zobaczyć partie.</p>
+    <div class="field"><label for="lLogin">Login</label><input type="text" id="lLogin" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+    <div class="field"><label for="lPass">Hasło</label><input type="password" id="lPass" autocomplete="current-password" required></div>
+    <p class="err" id="lErr"></p>
+    <div class="actions"><button class="btn" type="submit" id="lBtn">Zaloguj</button></div>
+  </form>
+</div>
+
+<div class="screen hidden" id="scrSetup">
+  <form class="panel" id="setupForm" autocomplete="off">
+    <h1>Pierwsze uruchomienie</h1>
+    <p>Załóż konto administratora. Administrator dodaje i usuwa pozostałych użytkowników.</p>
+    <div class="field"><label for="sLogin">Login</label><input type="text" id="sLogin" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+    <div class="field"><label for="sName">Imię (widoczne w historii)</label><input type="text" id="sName" required></div>
+    <div class="field"><label for="sPass">Hasło (min. 6 znaków)</label><input type="password" id="sPass" autocomplete="new-password" required minlength="6"></div>
+    <div class="field"><label for="sPass2">Powtórz hasło</label><input type="password" id="sPass2" autocomplete="new-password" required minlength="6"></div>
+    <p class="err" id="sErr"></p>
+    <div class="actions"><button class="btn" type="submit" id="sBtn">Załóż konto i wejdź</button></div>
+  </form>
+</div>
+
+<div class="screen hidden" id="scrNoAccess">
+  <div class="panel">
+    <h1>Brak dostępu</h1>
+    <p id="naMsg">To konto nie ma dostępu do Butli. Poproś administratora o dodanie.</p>
+    <div class="actions"><button class="btn ghost" id="naOut">Wyloguj</button></div>
+  </div>
+</div>
+
+<!-- ===== aplikacja ===== -->
+<div class="wrap hidden" id="app">
+  <header>
+    <div>
+      <h1>Butla</h1>
+      <p>Partie wina, etapy fermentacji, fuzje i historia działań.</p>
+    </div>
+    <div class="io">
+      <button class="btn ghost small" id="exp">Eksportuj dane</button>
+      <button class="btn ghost small" id="impBtn">Importuj dane</button>
+      <input type="file" id="imp" accept="application/json" class="hidden">
+      <button class="me" id="meBtn" aria-haspopup="dialog"></button>
+    </div>
+  </header>
+
+  <div class="years" id="years" role="tablist" aria-label="Rocznik"></div>
+  <div class="batches" id="batches"></div>
+
+  <div class="emptyState hidden" id="emptyState">
+    <h2>Nie ma jeszcze żadnej partii</h2>
+    <p class="empty">Załóż pierwszą, zaimportuj eksport z poprzedniej wersji albo wczytaj obecne partie.</p>
+    <div class="actions">
+      <button class="btn" id="esNew">+ Nowa partia</button>
+      <button class="btn ghost" id="esImp">Importuj dane</button>
+      <button class="btn ghost" id="esSeed">Wczytaj Weronikę, Pacjenta Zero, Malagę i Sherry</button>
+    </div>
+  </div>
+
+  <div class="layout" id="main">
+    <div>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-mode="ferm">Partia</button>
+        <button class="tab" role="tab" aria-selected="false" data-mode="fusion">Fuzja win</button>
+      </div>
+
+      <div class="grid">
+        <div>
+          <!-- PARTIA -->
+          <section id="pFerm">
+            <div class="block">
+              <h2>Dane partii</h2>
+              <div class="fields">
+                <div class="field"><label for="fName">Nazwa</label><input type="text" id="fName"></div>
+                <div class="field"><label for="fFruit">Z czego</label><select id="fFruit"></select></div>
+                <div class="field"><label for="fYear">Rocznik</label><input type="number" id="fYear" min="1990" max="2100" step="1"></div>
+                <div class="field"><span class="lab">&nbsp;</span><div class="hint" id="yrHint"></div></div>
+                <div class="field"><label for="fCap">Pojemność naczynia (l)</label><input type="number" id="fCap" min="0.5" step="0.5"></div>
+                <div class="field"><label for="fVol">Ilość wina w naczyniu (l)</label><input type="number" id="fVol" min="0" step="0.5"><div class="hint" id="vHint"></div></div>
+                <div class="field full"><span class="lab">Drożdże</span><div class="chips" id="yeastChips"></div></div>
+                <div class="field">
+                  <label for="fYeast">Ilość drożdży (g)</label>
+                  <div class="stepper"><button type="button" data-step="fYeast:-0.5" aria-label="Mniej drożdży">−</button>
+                    <input type="number" id="fYeast" min="0" step="0.5"><button type="button" data-step="fYeast:0.5" aria-label="Więcej drożdży">+</button></div>
+                  <div class="hint" id="yHint"></div>
+                </div>
+                <div class="field">
+                  <label for="fNut">Pożywka (g)</label>
+                  <div class="stepper"><button type="button" data-step="fNut:-0.5" aria-label="Mniej pożywki">−</button>
+                    <input type="number" id="fNut" min="0" step="0.5"><button type="button" data-step="fNut:0.5" aria-label="Więcej pożywki">+</button></div>
+                  <div class="hint" id="nHint"></div>
+                </div>
+                <div class="field">
+                  <label for="fPulpa">Owoce / pulpa (l)</label>
+                  <div class="stepper"><button type="button" data-step="fPulpa:-0.5" aria-label="Mniej pulpy">−</button>
+                    <input type="number" id="fPulpa" min="0" step="0.5"><button type="button" data-step="fPulpa:0.5" aria-label="Więcej pulpy">+</button></div>
+                </div>
+                <div class="field">
+                  <label for="fSugar">Cukier (kg)</label>
+                  <div class="stepper"><button type="button" data-step="fSugar:-0.1" aria-label="Mniej cukru">−</button>
+                    <input type="number" id="fSugar" min="0" step="0.1"><button type="button" data-step="fSugar:0.1" aria-label="Więcej cukru">+</button></div>
+                </div>
+                <div class="field">
+                  <label for="fWater">Woda (l)</label>
+                  <div class="stepper"><button type="button" data-step="fWater:-0.5" aria-label="Mniej wody">−</button>
+                    <input type="number" id="fWater" min="0" step="0.5"><button type="button" data-step="fWater:0.5" aria-label="Więcej wody">+</button></div>
+                </div>
+                <div class="field"><span class="lab">Proporcje nastawu</span><div id="propHint"></div><div class="hint" id="propHint2"></div></div>
+              </div>
+            </div>
+
+            <div class="block">
+              <h2>Etap</h2>
+              <ol class="steps" id="steps"></ol>
+              <div class="card">
+                <h3 id="stName"></h3>
+                <p class="time" id="stTime"></p>
+                <p id="stText"></p>
+              </div>
+              <div class="actions">
+                <button class="btn" id="next">Kolejny etap</button>
+                <button class="btn ghost" id="prev">Poprzedni etap</button>
+              </div>
+            </div>
+
+            <div class="actions"><button class="btn danger small" id="del">Usuń tę partię</button></div>
+          </section>
+
+          <!-- FUZJA -->
+          <section id="pFusion" class="hidden">
+            <div class="block">
+              <h2>Naczynie docelowe</h2>
+              <select id="fuTarget" aria-label="Naczynie docelowe"></select>
+              <p class="hint" id="fuTHint"></p>
+            </div>
+            <div class="block">
+              <h2>Dolej z innych partii</h2>
+              <div class="rows" id="rows"></div>
+              <p class="status" id="status"></p>
+              <div class="actions">
+                <button class="btn" id="mix">Zmieszaj i zapisz</button>
+                <button class="btn ghost" id="clear">Wyzeruj</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="vessel">
+          <svg viewBox="0 0 440 480" role="img" aria-label="Naczynie z warstwami wina i rurką fermentacyjną">
+            <defs>
+              <clipPath id="bottleClip"><path id="bottleShapeClip"/></clipPath>
+              <clipPath id="chamberClip"><rect x="131" y="15" width="38" height="54" rx="9"/></clipPath>
+              <pattern id="tex" width="16" height="13" patternUnits="userSpaceOnUse">
+                <circle cx="3" cy="3" r="2.6" fill="rgba(0,0,0,.28)"/>
+                <circle cx="11" cy="8" r="3.2" fill="rgba(0,0,0,.2)"/>
+                <ellipse cx="8" cy="2.5" rx="1.4" ry="0.9" fill="rgba(255,235,190,.45)"/>
+                <ellipse cx="14" cy="11.5" rx="1.2" ry="0.8" fill="rgba(255,235,190,.4)"/>
+              </pattern>
+            </defs>
+            <path id="bottleBack" fill="var(--glass-fill)"/>
+            <g clip-path="url(#bottleClip)"><g id="layers"></g><g id="bubbles"></g></g>
+            <path id="bottleFront" fill="none" stroke="var(--glass)" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M62 305 Q56 372 68 432" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="7" stroke-linecap="round"/>
+            <rect x="146" y="56" width="8" height="54" rx="2" fill="var(--glass-fill)" stroke="var(--glass)" stroke-width="1.5"/>
+            <rect x="121" y="104" width="58" height="26" rx="5" fill="#A87C52"/>
+            <rect x="121" y="104" width="58" height="6" rx="3" fill="#C29B70"/>
+            <g clip-path="url(#chamberClip)"><path id="airWater" fill="#9CC4CF" fill-opacity=".75"/><g id="airBubbles"></g></g>
+            <rect x="146" y="40" width="8" height="30" rx="2" fill="none" stroke="var(--glass)" stroke-width="1.2" stroke-opacity=".7"/>
+            <rect x="130" y="14" width="40" height="56" rx="10" fill="none" stroke="var(--glass)" stroke-width="2.5"/>
+            <rect x="136" y="8" width="28" height="8" rx="3" fill="var(--glass)"/>
+            <g id="labels" font-family="Instrument Sans, system-ui, sans-serif" font-size="14" fill="var(--ink)"></g>
+          </svg>
+          <p class="cap" id="vCap"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIA -->
+    <aside class="side" aria-labelledby="hTitle">
+      <h2 id="hTitle">Historia zmian</h2>
+      <div class="chips" id="hScope">
+        <button type="button" class="chip small" data-scope="batch" aria-pressed="true">Ta partia</button>
+        <button type="button" class="chip small" data-scope="all" aria-pressed="false" id="scopeAll">Cały rocznik</button>
+      </div>
+      <div class="addrow">
+        <input type="text" id="hText" placeholder="Np. zmierzone 1060, zanurzona czapa" aria-label="Treść wpisu">
+        <div class="two">
+          <input type="date" id="hDate" aria-label="Data wpisu">
+          <button class="btn small" id="hAdd">Dodaj wpis</button>
+        </div>
+      </div>
+      <div class="hlist" id="hist"></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ===== konto i użytkownicy ===== -->
+<dialog id="dlgUsers" aria-labelledby="duTitle">
+  <h2 id="duTitle">Konto i użytkownicy</h2>
+  <div id="duMe"></div>
+  <h3>Zmień swoje hasło</h3>
+  <div class="uform">
+    <input type="password" id="pwNew" placeholder="Nowe hasło (min. 6 znaków)" autocomplete="new-password" aria-label="Nowe hasło">
+    <button class="btn small ghost" id="pwBtn">Zmień hasło</button>
+  </div>
+  <p class="err" id="pwErr"></p>
+  <h3>Użytkownicy</h3>
+  <ul class="ulist" id="duList"></ul>
+  <div id="duAdd" class="hidden">
+    <h3>Dodaj użytkownika</h3>
+    <div class="uform">
+      <input type="text" id="nuLogin" placeholder="Login" autocapitalize="none" spellcheck="false" aria-label="Login">
+      <input type="text" id="nuName" placeholder="Imię" aria-label="Imię">
+      <input type="password" id="nuPass" placeholder="Hasło (min. 6 znaków)" autocomplete="new-password" aria-label="Hasło">
+      <button class="btn small" id="nuBtn">Dodaj</button>
+    </div>
+    <p class="err" id="nuErr"></p>
+  </div>
+  <div class="actions" style="justify-content:space-between">
+    <button class="btn danger small" id="logout">Wyloguj</button>
+    <button class="btn ghost small" id="duClose">Zamknij</button>
+  </div>
+</dialog>
+
+<script>
+// Konfiguracja projektu Firebase „butla-91912” (patrz README.md). apiKey nie jest tajny – dostęp chronią reguły.
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDC_TmC6xpRIPhlcTmubGfcHUF7KgRbZGU",
+  authDomain: "butla-91912.firebaseapp.com",
+  projectId: "butla-91912",
+  storageBucket: "butla-91912.firebasestorage.app",
+  messagingSenderId: "691253820190",
+  appId: "1:691253820190:web:7f9fcd46190bbfe6d2270f"
+};
+
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SPEED = RM ? .35 : 1;
+const $ = id => document.getElementById(id);
+const DOMAIN = 'butla.app';
+
+const FRUITS = {
+  ciemne:    {name:'Winogrona ciemne', color:'#6A1A32', pulp:'#3E1022'},
+  jasne:     {name:'Winogrona jasne',  color:'#C69A3A', pulp:'#7D7A2E'},
+  jablka:    {name:'Jabłka',           color:'#D6B357', pulp:'#9A8A3E'},
+  wisnie:    {name:'Wiśnie',           color:'#7A0F24', pulp:'#4A0815'},
+  porzeczki: {name:'Czarne porzeczki', color:'#40102A', pulp:'#26061A'},
+  inne:      {name:'Inne owoce',       color:'#9A3A4A', pulp:'#5A2030'},
+};
+const YEASTS = {malaga:'Malaga 1', sherry:'Sherry', uni:'Uniwersalne'};
+const SACHET = 5;
+const SUGAR_L = 0.63;   // 1 kg cukru zajmuje po rozpuszczeniu ok. 0,63 l
+const SUGAR='#E8D39A', WATER='#C6DCE0';
+const USER_COLORS = ['#7A2E4A','#2E5E7A','#4F6B2A','#8A5A22','#55337A','#2E7A6A','#9A3B1E'];
+const STAGES = [
+  {name:'Nastaw', time:'Dzień 0',
+   text:'Pulpa, woda i cukier trafiają do naczynia razem z drożdżami i pożywką. Nierozmieszany cukier leży na dnie, a pulpa unosi się u góry. Rurka dopiero zaczyna pracować.'},
+  {name:'Burzliwa fermentacja', time:'Zwykle 5–10 dni',
+   text:'Drożdże zamieniają cukier w alkohol i CO₂. Gaz wypycha pulpę w górę i tworzy czapę, nad którą zbiera się piana. Czapę warto zanurzać raz lub dwa razy dziennie. Zostaw 10–20% miejsca na pianę.'},
+  {name:'Cicha fermentacja', time:'Kilka tygodni',
+   text:'Pulpa jest odcedzona, a wino pracuje spokojnie. Na dnie zbiera się osad drożdżowy, rurka bąbluje rzadko. Im mniej powietrza nad winem, tym lepiej: dolej pod szyjkę albo zatop zdezynfekowane butelki z wodą.'},
+  {name:'Dojrzewanie', time:'Od kilku tygodni do miesięcy',
+   text:'Wino się klaruje, a osad zbija się na dnie. Bąbel pojawia się tylko od czasu do czasu. To dobry moment na zlanie wina znad osadu.'},
+];
+const DAYS=['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
+
+// ---------- pomocnicze ----------
+const hex = h => [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const toHex = c => '#'+c.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
+const mixc = (a,b,t) => a.map((v,i)=>v+(b[i]-v)*t);
+const rgb = c => `rgb(${c.map(v=>Math.round(v)).join(',')})`;
+const num = v => { const n=parseFloat(String(v).replace(',','.')); return isFinite(n)?n:0; };
+const r2 = n => Math.round(n*100)/100;
+const fmt = n => r2(n).toString().replace('.',',');
+const isoOf = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today = () => isoOf(new Date());
+const fmtDate = iso => { const [y,m,d]=iso.split('-'); return `${d}.${m}.${y}`; };
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tsMs = t => t && t.toMillis ? t.toMillis() : (typeof t==='number' ? t : 0);
+function sachets(g){
+  const n=g/SACHET; if(n===0) return 'brak';
+  const t=fmt(n);
+  if(!Number.isInteger(n)) return `${t} saszetki`;
+  if(n===1) return '1 saszetka';
+  const m10=n%10, m100=n%100;
+  return (m10>=2&&m10<=4&&!(m100>=12&&m100<=14)) ? `${t} saszetki` : `${t} saszetek`;
+}
+function mixWeighted(list){
+  let w=0, s=[0,0,0];
+  list.forEach(([c,q])=>{ w+=q; s=s.map((v,i)=>v+c[i]*q); });
+  return w ? s.map(v=>v/w) : [120,40,60];
+}
+const batchColor = b => b.color || (FRUITS[b.fruit]||FRUITS.inne).color;
+function hashColor(s){ let h=0; for(const ch of String(s)) h=(h*31+ch.charCodeAt(0))|0; return USER_COLORS[Math.abs(h)%USER_COLORS.length]; }
+function initials(name){ const p=String(name||'?').trim().split(/\s+/); return ((p[0]||'?')[0]+(p[1]?p[1][0]:'')).toUpperCase(); }
+function avatar(uid,fallback){
+  const u=USERS[uid]; const name=u?u.name:(fallback||'?'); const c=u&&u.color?u.color:hashColor(uid||name);
+  return `<span class="av" style="--c:${c}" title="${esc(name)}">${esc(initials(name))}</span>`;
+}
+const userName = (uid,fallback) => USERS[uid] ? USERS[uid].name : (fallback || 'ktoś');
+function normLogin(s){ return String(s||'').trim().toLowerCase(); }
+const LOGIN_RE=/^[a-z0-9._-]{2,30}$/;
+function authMsg(e){
+  const c=e&&e.code||'';
+  if(/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c)) return 'Zły login lub hasło.';
+  if(/too-many-requests/.test(c)) return 'Za dużo prób. Odczekaj chwilę.';
+  if(/network-request-failed/.test(c)) return 'Brak połączenia z internetem.';
+  if(/weak-password/.test(c)) return 'Hasło musi mieć co najmniej 6 znaków.';
+  if(/email-already-in-use/.test(c)) return 'Taki login już istnieje.';
+  if(/requires-recent-login/.test(c)) return 'Ze względów bezpieczeństwa wyloguj się, zaloguj ponownie i spróbuj jeszcze raz.';
+  if(/permission-denied/.test(c)) return 'Brak uprawnień.';
+  if(/operation-not-allowed/.test(c)) return 'W Firebase nie jest włączone logowanie e-mail/hasło.';
+  return (e&&e.message)||'Coś poszło nie tak.';
+}
+function show(id){ ['scrConfig','scrLoading','scrLogin','scrSetup','scrNoAccess','app'].forEach(s=>$(s).classList.toggle('hidden',s!==id)); }
+
+// ---------- konfiguracja Firebase ----------
+function parseConfig(raw){
+  raw=String(raw||'').trim();
+  const a=raw.indexOf('{'), b=raw.lastIndexOf('}'); if(a<0||b<a) throw new Error('Nie widzę nawiasów { }.');
+  let s=raw.slice(a,b+1);
+  try{ return JSON.parse(s); }catch(e){}
+  s=s.replace(/\/\/[^\n]*/g,'').replace(/'/g,'"').replace(/([{,]\s*)([A-Za-z_]\w*)\s*:/g,'$1"$2":').replace(/,\s*}/g,'}');
+  return JSON.parse(s);
+}
+function storedConfig(){ try{ return JSON.parse(localStorage.getItem('butla.fbconfig')); }catch(e){ return null; } }
+$('cfgSave').onclick=()=>{
+  try{
+    const c=parseConfig($('cfgIn').value);
+    if(!c.apiKey||!c.projectId) throw new Error('Brakuje apiKey albo projectId.');
+    localStorage.setItem('butla.fbconfig',JSON.stringify(c)); location.reload();
+  }catch(e){ $('cfgErr').textContent='Nie udało się odczytać konfiguracji. '+e.message; }
+};
+
+// ---------- stan ----------
+let auth=null, db=null, CFG=null, ME=null, MYDOC=null, settingUp=false;
+let USERS={}, BATCHES=[], HIST=[];
+let dataUnsubs=[], meUnsub=null, dataOn=false, loaded={b:false,h:false,u:false};
+const state={mode:'ferm', scope:'batch'};
+const FU={target:null, add:{}, phase:'idle'};
+const FV = () => firebase.firestore.FieldValue;
+
+const activeId = () => { try{ return localStorage.getItem('butla.active'); }catch(e){ return null; } };
+function setActive(id){ try{ localStorage.setItem('butla.active',id); }catch(e){} }
+const byId = id => BATCHES.find(b=>b.id===id);
+const yearsList = () => [...new Set(BATCHES.map(b=>b.year))].sort((a,b)=>b-a);
+function selYear(){
+  let y=null; try{ y=localStorage.getItem('butla.year'); }catch(e){}
+  const ys=yearsList();
+  if(y==='all') return ys.length>1 ? 'all' : (ys[0]||new Date().getFullYear());
+  y=parseInt(y,10);
+  return ys.includes(y) ? y : (ys[0]||new Date().getFullYear());
+}
+function setYear(y){ try{ localStorage.setItem('butla.year',String(y)); }catch(e){} }
+const visible = () => { const y=selYear(); return y==='all' ? BATCHES : BATCHES.filter(b=>b.year===y); };
+const active = () => { const v=visible(), a=byId(activeId()); return (a&&v.includes(a)) ? a : (v[0]||null); };
+
+const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','waterL','stage','color'];
+function mk(o){
+  return Object.assign({name:'Nowa partia',year:new Date().getFullYear(),fruit:'ciemne',cap:5,vol:4.5,yeast:'uni',yeastG:5,nutG:0,
+    pulpaL:2,sugarKg:1,waterL:2,stage:0,color:null},o);
+}
+// przyjmuje partię z bazy albo z eksportu (także starszego, z proporcjami w %)
+function normBatch(o){
+  const b=Object.assign({},o);
+  const pick=(...k)=>{ for(const x of k) if(b[x]!=null&&b[x]!=='') return num(b[x]); return null; };
+  const vol=pick('vol','ilosc','litry'); if(vol!=null) b.vol=vol;
+  let pl=pick('pulpaL','fruitL','owoceL','pulpL','owoce');
+  let sk=pick('sugarKg','cukierKg','sugar');
+  let wl=pick('waterL','wodaL','water','woda');
+  if(pl==null && sk==null && wl==null && (b.pulpa!=null||b.cukier!=null)){
+    const base=num(b.vol)||5, p=num(b.pulpa), c=num(b.cukier);
+    pl=r2(base*p/100); sk=r2(base*c/100/SUGAR_L); wl=r2(Math.max(0,base*(100-p-c)/100));
+  }
+  if(pl!=null) b.pulpaL=pl; if(sk!=null) b.sugarKg=sk; if(wl!=null) b.waterL=wl;
+  if(b.yeastG==null && b.yeastGrams!=null) b.yeastG=num(b.yeastGrams);
+  if(b.nutG==null && b.nutrientG!=null) b.nutG=num(b.nutrientG);
+  const out=mk({});
+  BATCH_FIELDS.forEach(k=>{ if(b[k]!==undefined) out[k]=b[k]; });
+  ['cap','vol','yeastG','nutG','pulpaL','sugarKg','waterL'].forEach(k=>out[k]=Math.max(0,num(out[k])));
+  out.stage=Math.min(STAGES.length-1,Math.max(0,parseInt(out.stage,10)||0));
+  if(!FRUITS[out.fruit]) out.fruit='inne';
+  if(!YEASTS[out.yeast]) out.yeast='uni';
+  out.name=String(out.name||'Bez nazwy');
+  { const y=parseInt(b.year!=null?b.year:(b.rocznik!=null?b.rocznik:''),10);
+    out.year = y>=1990&&y<=2100 ? y : (tsMs(o.createdAt) ? new Date(tsMs(o.createdAt)).getFullYear() : new Date().getFullYear()); }
+  out.id=o.id; out.createdAt=o.createdAt||null;
+  return out;
+}
+function batchData(b){ const d={}; BATCH_FIELDS.forEach(k=>d[k]=b[k]===undefined?null:b[k]); return d; }
+
+// ---------- zapis ----------
+const saveT={};
+function save(b){
+  clearTimeout(saveT[b.id]);
+  saveT[b.id]=setTimeout(()=>{
+    delete saveT[b.id];
+    db.collection('batches').doc(b.id).set(Object.assign(batchData(b),{updatedAt:FV().serverTimestamp(),updatedBy:ME.uid}),{merge:true})
+      .catch(e=>alert('Nie udało się zapisać partii: '+authMsg(e)));
+  },400);
+}
+function histDoc(b,text,d){ return {batchId:b.id,bn:b.name,d:d||today(),t:text,ts:FV().serverTimestamp(),uid:ME.uid}; }
+function log(b,text,d){
+  return db.collection('history').add(histDoc(b,text,d)).catch(e=>alert('Nie udało się zapisać wpisu: '+authMsg(e)));
+}
+// wpisy z opóźnieniem, żeby klikanie +/− nie zaśmiecało historii; w treści różnica od wartości wyjściowej
+const pend={}, base={};
+function logLater(b,key,textFn){
+  const k=b.id+'|'+key, id=b.id;
+  if(!(k in base)) base[k]=b[key];
+  if(pend[k]) clearTimeout(pend[k].t);
+  const run=()=>{ delete pend[k]; const was=base[k]; delete base[k]; const cur=byId(id); if(!cur) return;
+    const txt=textFn(cur,was); if(txt) log(cur,txt); };
+  pend[k]={t:setTimeout(run,2500),run};
+}
+function flushPending(){
+  for(const k in pend){ clearTimeout(pend[k].t); pend[k].run(); }
+  for(const id in saveT){ /* wymuś zapis od razu */ const b=byId(id); clearTimeout(saveT[id]); delete saveT[id];
+    if(b) db.collection('batches').doc(id).set(Object.assign(batchData(b),{updatedAt:FV().serverTimestamp(),updatedBy:ME.uid}),{merge:true}); }
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && db && ME) flushPending(); });
+function diffText(label,unit,cur,was,extra){
+  const d=r2(cur-was); if(!d) return null;
+  return `${label}: ${d>0?'dodano':'odjęto'} ${fmt(Math.abs(d))} ${unit} (teraz ${fmt(cur)} ${unit}${extra?', '+extra:''})`;
+}
+
+// ---------- proporcje nastawu ----------
+function nastaw(b){
+  const s=b.sugarKg*SUGAR_L, tot=b.pulpaL+s+b.waterL;
+  if(tot<=0) return null;
+  return {tot, p:b.pulpaL/tot*100, s:s/tot*100, w:b.waterL/tot*100};
+}
+
+// ---------- cele animacji ----------
+function yeastFactor(b){ return (0.55+0.45*Math.min(1,b.yeastG/SACHET))*(b.nutG>0?1.15:1); }
+function fermTargets(b){
+  const W=hex(batchColor(b)), P=hex((FRUITS[b.fruit]||FRUITS.inne).pulp), r=yeastFactor(b);
+  const fill=Math.min(1,b.cap>0?b.vol/b.cap:0);
+  const N=nastaw(b), pul=N?N.p:0, cuk=N?N.s:0, wod=N?N.w:100, s=b.stage;
+  if(s===0){
+    if(!N) return {air:.12*r, liq:.6, layers:[{id:'sok',order:2,label:'Moszcz',rgb:mixc(W,hex(WATER),.5),frac:fill,op:.9,amp:2}]};
+    return {air:.12*r, liq:.6, layers:[
+    {id:'cukier',order:1,label:`Cukier ${Math.round(cuk)}%`,rgb:hex(SUGAR),frac:fill*cuk/100,op:1,amp:1.2},
+    {id:'sok',order:2,label:`Woda ${Math.round(wod)}%`,rgb:hex(WATER),frac:fill*wod/100,op:.9,amp:2},
+    {id:'pulpa',order:20,label:`Pulpa ${Math.round(pul)}%`,rgb:P,frac:fill*pul/100,op:1,amp:3,tex:1}]};
+  }
+  if(s===1){ const L=Math.min(1,fill*1.05), pu=L*pul/100*.55, pia=Math.min(.04,L*.06), cu=Math.min(.025,L*.04*(cuk>0?1:0));
+    return {air:2.3*r, liq:16*r, layers:[
+    {id:'cukier',order:1,label:'Resztki cukru',rgb:hex('#DCC487'),frac:cu,op:1,amp:1.5},
+    {id:'sok',order:2,label:'Fermentujący moszcz',rgb:mixc(W,hex('#EAD8B2'),.35),frac:Math.max(0,L-pu-pia-cu),op:.92,amp:3.6},
+    {id:'pulpa',order:20,label:'Czapa z pulpy',rgb:P,frac:pu,op:1,amp:4.6,tex:1},
+    {id:'piana',order:30,label:'Piana',rgb:hex('#F2E8DA'),frac:pia,op:.88,amp:5.2}]}; }
+  if(s===2){ const os=Math.min(.05,fill*.07); return {air:.35*r, liq:2.4*r, layers:[
+    {id:'osad',order:0,label:'Osad drożdżowy',rgb:hex('#B9A989'),frac:os,op:1,amp:1},
+    {id:'sok',order:2,label:'Młode wino',rgb:mixc(W,hex('#D9C7A6'),.22),frac:fill-os,op:.86,amp:2.4}]}; }
+  const os=Math.min(.03,fill*.04);
+  return {air:.07*r, liq:.3, layers:[
+    {id:'osad',order:0,label:'Osad',rgb:hex('#9C8D72'),frac:os,op:1,amp:.8},
+    {id:'sok',order:2,label:'Wino',rgb:W,frac:fill-os,op:.95,amp:1.5}]};
+}
+function fusionInfo(){
+  const t=byId(FU.target); if(!t) return null;
+  const src=BATCHES.filter(b=>b.id!==t.id && (FU.add[b.id]||0)>0);
+  const added=src.reduce((s,b)=>s+FU.add[b.id],0);
+  const total=t.vol+added;
+  const perL = total>0 && t.cap>0 ? Math.min(1,t.cap/total)/t.cap : 0;
+  const mix = mixWeighted([[hex(batchColor(t)),t.vol],...src.map(b=>[hex(batchColor(b)),FU.add[b.id]])]);
+  return {t,src,added,total,perL,mix};
+}
+function fusionTargets(){
+  const I=fusionInfo(); if(!I) return {air:0,liq:0,layers:[]};
+  const mixing=FU.phase==='mixing';
+  const base={id:'f_base',order:3,label:`${I.t.name} ${fmt(I.t.vol)} l`,rgb:mixing?I.mix:hex(batchColor(I.t)),
+    frac:I.t.vol*I.perL,op:.95,amp:mixing?7:2};
+  return {air:mixing?1.2:.35, liq:mixing?18:1.4, layers:[base,...I.src.map(b=>({
+    id:'c_'+b.id, order:10+BATCHES.indexOf(b), label:`${b.name} ${fmt(FU.add[b.id])} l`,
+    rgb:mixing?I.mix:hex(batchColor(b)), frac:FU.add[b.id]*I.perL, op:.95, amp:mixing?7:2}))]};
+}
+
+// ---------- silnik animacji ----------
+const cur={}; let target={air:0,liq:0,layers:[]}; let air=0, liq=0;
+function setTarget(t){
+  target=t;
+  t.layers.forEach(L=>{
+    if(!cur[L.id]) cur[L.id]={frac:0,rgb:L.rgb.slice(),op:L.op,amp:L.amp};
+    Object.assign(cur[L.id],{label:L.label,tex:L.tex,order:L.order});
+  });
+}
+function step(dt){
+  const k=1-Math.exp(-dt*2.2);
+  for(const id in cur){
+    const c=cur[id], t=target.layers.find(l=>l.id===id);
+    c.frac+=((t?t.frac:0)-c.frac)*k;
+    if(t){ for(let i=0;i<3;i++) c.rgb[i]+=(t.rgb[i]-c.rgb[i])*k; c.op+=(t.op-c.op)*k; c.amp+=(t.amp-c.amp)*k; }
+    if(!t && c.frac<.0008) delete cur[id];
+  }
+  air+=(target.air-air)*k; liq+=(target.liq-liq)*k;
+}
+const BOTTLE='M125,120 L125,180 C125,200 40,210 40,290 L40,430 Q40,460 70,460 L230,460 Q260,460 260,430 L260,290 C260,210 175,200 175,180 L175,120 Z';
+['bottleShapeClip','bottleBack','bottleFront'].forEach(id=>$(id).setAttribute('d',BOTTLE));
+const Y0=460, YF=212, H=Y0-YF;
+function edgeX(y){ if(y>=290) return 260; const t=Math.max(0,Math.min(1,(y-185)/105)); return 175+85*Math.pow(t,.6); }
+const gLayers=$('layers'), gBub=$('bubbles'), gLab=$('labels'), gAirB=$('airBubbles'), airWater=$('airWater');
+const pool={}, labPool={};
+function wave(top,amp,ph,x0=34,x1=266,stepX=8){
+  let d=`M${x0},${(top+amp*Math.sin(x0*.035+ph)).toFixed(1)}`;
+  for(let x=x0+stepX;x<=x1;x+=stepX){ const y=top+amp*Math.sin(x*.035+ph)+amp*.4*Math.sin(x*.09-ph*1.3); d+=` L${x},${y.toFixed(1)}`; }
+  return d;
+}
+const bubbles=[], airB=[]; let liqAcc=0, airAcc=0, jiggle=0, time=0;
+function render(dt){
+  time+=dt*SPEED;
+  const list=Object.entries(cur).sort((a,b)=>a[1].order-b[1].order);
+  let acc=0; const geo=[];
+  list.forEach(([id,c])=>{ const bottom=Y0-acc*H; acc+=c.frac; geo.push({id,c,top:Y0-acc*H,bottom}); });
+  const liquidTop=Y0-acc*H;
+  for(const id in pool){ if(!cur[id]){ pool[id].g.remove(); delete pool[id]; } }
+  for(let i=geo.length-1;i>=0;i--){
+    const {id,c,top}=geo[i]; let p=pool[id];
+    if(!p){ const g=document.createElementNS(NS,'g'), f=document.createElementNS(NS,'path'), t=document.createElementNS(NS,'path');
+      t.setAttribute('fill','url(#tex)'); g.append(f,t); p=pool[id]={g,f,t}; }
+    const ph=time*(0.8+i*.13)+i*1.7, d=wave(top,c.amp,ph)+' L266,472 L34,472 Z';
+    p.f.setAttribute('d',d); p.f.setAttribute('fill',rgb(c.rgb)); p.f.setAttribute('fill-opacity',c.op.toFixed(3));
+    if(c.tex){ p.t.setAttribute('d',d); p.t.style.display=''; p.t.setAttribute('transform',`translate(${(Math.sin(time*.6)*3).toFixed(2)},${(Math.cos(time*.5)*1.5).toFixed(2)})`); }
+    else p.t.style.display='none';
+    gLayers.appendChild(p.g);
+  }
+  liqAcc+=liq*dt*(RM?.5:1);
+  while(liqAcc>=1){ liqAcc--; if(acc>.05) bubbles.push({x:60+Math.random()*180,y:Y0-4-Math.random()*20,r:1+Math.random()*2.4,v:30+Math.random()*50,w:Math.random()*6,el:null}); }
+  for(let i=bubbles.length-1;i>=0;i--){
+    const b=bubbles[i];
+    if(!b.el){ b.el=document.createElementNS(NS,'circle'); b.el.setAttribute('fill','#fff'); b.el.setAttribute('fill-opacity','.45'); gBub.appendChild(b.el); }
+    b.y-=b.v*dt*SPEED; b.x+=Math.sin(time*3+b.w)*.25;
+    if(b.y<liquidTop+3){ b.el.remove(); bubbles.splice(i,1); continue; }
+    b.el.setAttribute('cx',b.x.toFixed(1)); b.el.setAttribute('cy',b.y.toFixed(1)); b.el.setAttribute('r',b.r.toFixed(1));
+  }
+  airAcc+=air*dt*(RM?.6:1);
+  while(airAcc>=1){ airAcc--; airB.push({y:60,r:2,el:null}); }
+  for(let i=airB.length-1;i>=0;i--){
+    const b=airB[i];
+    if(!b.el){ b.el=document.createElementNS(NS,'circle'); b.el.setAttribute('cx','150'); b.el.setAttribute('fill','#fff'); b.el.setAttribute('fill-opacity','.8'); gAirB.appendChild(b.el); }
+    b.y-=34*dt*SPEED; b.r=Math.min(5.5,b.r+9*dt*SPEED);
+    if(b.y<45){ b.el.remove(); airB.splice(i,1); jiggle=Math.min(4,jiggle+2.2); continue; }
+    b.el.setAttribute('cy',b.y.toFixed(1)); b.el.setAttribute('r',b.r.toFixed(1));
+  }
+  jiggle*=Math.exp(-dt*3);
+  airWater.setAttribute('d',wave(44,.6+jiggle,time*4,128,172,4)+' L172,72 L128,72 Z');
+  const labs=geo.filter(g=>g.c.frac>.018).map(g=>({id:g.id,label:g.c.label,y:(g.top+g.bottom)/2,ly:(g.top+g.bottom)/2}));
+  labs.sort((a,b)=>a.y-b.y);
+  for(let i=1;i<labs.length;i++) if(labs[i].ly<labs[i-1].ly+19) labs[i].ly=labs[i-1].ly+19;
+  const seen=new Set();
+  labs.forEach(L=>{
+    seen.add(L.id); let p=labPool[L.id];
+    if(!p){ const g=document.createElementNS(NS,'g'), ln=document.createElementNS(NS,'polyline'), tx=document.createElementNS(NS,'text');
+      ln.setAttribute('fill','none'); ln.setAttribute('stroke','var(--muted)'); ln.setAttribute('stroke-width','1');
+      g.append(ln,tx); gLab.appendChild(g); p=labPool[L.id]={g,ln,tx}; }
+    const ex=edgeX(L.y)+6;
+    p.ln.setAttribute('points',`${ex.toFixed(1)},${L.y.toFixed(1)} 292,${L.y.toFixed(1)} 300,${L.ly.toFixed(1)} 306,${L.ly.toFixed(1)}`);
+    p.tx.setAttribute('x','310'); p.tx.setAttribute('y',(L.ly+5).toFixed(1));
+    if(p.tx.textContent!==L.label) p.tx.textContent=L.label;
+  });
+  for(const id in labPool){ if(!seen.has(id)){ labPool[id].g.remove(); delete labPool[id]; } }
+}
+let last=performance.now(), looping=false;
+function loop(now){ const dt=Math.min(.05,(now-last)/1000); last=now; step(dt); render(dt); requestAnimationFrame(loop); }
+
+// ---------- interfejs ----------
+function chip(html,color,pressed,onClick,cls){
+  const b=document.createElement('button'); b.type='button'; b.className='chip'+(cls?' '+cls:'');
+  if(color) b.style.setProperty('--c',color);
+  if(pressed!==null) b.setAttribute('aria-pressed',pressed);
+  b.innerHTML=(color?'<span class="sw"></span>':'')+html; b.onclick=onClick; return b;
+}
+function renderYears(){
+  const box=$('years'), ys=yearsList(), sy=selYear();
+  box.innerHTML='';
+  if(!BATCHES.length) return;
+  const mkY=(val,label,n)=>{ const b=document.createElement('button'); b.type='button'; b.className='yr'; b.setAttribute('role','tab');
+    b.setAttribute('aria-selected',String(val===sy)); b.innerHTML=`${label}<small>${n}</small>`;
+    b.onclick=()=>{ setYear(val); renderAll(); }; box.appendChild(b); };
+  ys.forEach(y=>mkY(y,y,BATCHES.filter(b=>b.year===y).length));
+  if(ys.length>1) mkY('all','Wszystkie',BATCHES.length);
+}
+function renderBatches(){
+  renderYears();
+  const box=$('batches'); box.innerHTML='';
+  const a=active(), sy=selYear();
+  visible().forEach(b=>box.appendChild(chip(`${esc(b.name)} <small>${sy==='all'?b.year+' · ':''}${fmt(b.vol)}/${fmt(b.cap)} l</small>`,batchColor(b),a&&b.id===a.id,()=>{
+    setActive(b.id); renderAll();
+  })));
+  if(BATCHES.length) box.appendChild(chip('+ Nowa partia',null,null,newBatch,'add'));
+  const none=!BATCHES.length;
+  $('emptyState').classList.toggle('hidden',!none);
+  $('main').classList.toggle('hidden',none);
+}
+function editing(){ const el=document.activeElement; return el && el.closest && el.closest('#pFerm .fields') ? el.id : null; }
+function renderForm(){
+  const b=active(); if(!b) return;
+  const ed=editing();
+  const setv=(id,v)=>{ if(id!==ed) $(id).value=v; };
+  setv('fName',b.name); setv('fYear',b.year);
+  { const d0=HIST.filter(h=>h.batchId===b.id).map(h=>h.d).sort()[0]; $('yrHint').textContent=d0?`Pierwszy wpis: ${fmtDate(d0)}`:''; }
+  if(ed!=='fFruit') $('fFruit').innerHTML=Object.entries(FRUITS).map(([k,f])=>`<option value="${k}" ${k===b.fruit?'selected':''}>${f.name}</option>`).join('');
+  setv('fCap',b.cap); setv('fVol',b.vol); setv('fYeast',b.yeastG); setv('fNut',b.nutG);
+  setv('fPulpa',b.pulpaL); setv('fSugar',b.sugarKg); setv('fWater',b.waterL);
+  renderYeast(); renderHints();
+  if(!$('hDate').value) $('hDate').value=today();
+  $('del').disabled=!BATCHES.length;
+}
+function renderYeast(){
+  const b=active(), box=$('yeastChips'); box.innerHTML='';
+  Object.entries(YEASTS).forEach(([k,n])=>box.appendChild(chip(n,'var(--ink)',k===b.yeast,()=>{
+    if(b.yeast===k) return; b.yeast=k; save(b); log(b,`Drożdże: ${n}`); renderYeast(); renderHints();
+  })));
+}
+function renderHints(){
+  const b=active(), free=b.cap-b.vol;
+  $('vHint').textContent = free<0 ? `Więcej niż pojemność o ${fmt(-free)} l` : `Wolne ${fmt(free)} l (${Math.round(b.cap?free/b.cap*100:0)}%)`;
+  $('yHint').textContent = `${sachets(b.yeastG)}${b.vol>0?`, ${fmt(b.yeastG/b.vol)} g/l`:''}`;
+  $('nHint').textContent = b.nutG>0 ? (b.vol>0?`${fmt(b.nutG/b.vol)} g/l`:'') : 'bez pożywki';
+  const N=nastaw(b);
+  if(!N){ $('propHint').textContent='Wpisz ilości owoców, cukru i wody.'; $('propHint2').textContent=''; return; }
+  $('propHint').textContent=`pulpa ${Math.round(N.p)}%, cukier ${Math.round(N.s)}%, woda ${Math.round(N.w)}%`;
+  $('propHint2').textContent=`Razem ok. ${fmt(N.tot)} l nastawu, ${Math.round(b.sugarKg*1000/N.tot)} g cukru na litr`;
+}
+function renderStage(){
+  const b=active(), S=STAGES[b.stage];
+  $('steps').innerHTML=STAGES.map((s,i)=>`<li class="${i<b.stage?'done':i===b.stage?'now':''}">${s.name}</li>`).join('');
+  $('stName').textContent=S.name; $('stTime').textContent=S.time; $('stText').textContent=S.text;
+  const nx=$('next'); nx.disabled=b.stage>=STAGES.length-1; nx.textContent=nx.disabled?'Ostatni etap':'Kolejny etap';
+  $('prev').disabled=b.stage===0;
+}
+function renderHistory(){
+  const box=$('hist'), b=active();
+  document.querySelectorAll('#hScope .chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.scope===state.scope));
+  const sy=selYear();
+  $('scopeAll').textContent = sy==='all' ? 'Wszystkie partie' : `Cały rocznik ${sy}`;
+  const inYear=h=>{ if(sy==='all') return true; const x=byId(h.batchId); return x ? x.year===sy : +h.d.slice(0,4)===sy; };
+  const items=HIST.filter(h=>state.scope==='all' ? inYear(h) : (b && h.batchId===b.id))
+    .sort((x,y)=>y.d.localeCompare(x.d) || tsMs(y.ts)-tsMs(x.ts));
+  if(!items.length){ box.innerHTML='<p class="empty">Brak wpisów. Dodaj pierwszy powyżej.</p>'; return; }
+  const admin=MYDOC&&MYDOC.role==='admin';
+  let html='', day=null;
+  items.forEach(h=>{
+    if(h.d!==day){ day=h.d; const dt=new Date(h.d+'T12:00'); html+=`<h3 class="day">${fmtDate(h.d)} · ${DAYS[dt.getDay()]}</h3>`; }
+    const t=h.ts&&h.ts.toDate ? h.ts.toDate() : null;
+    const hm=t && !h.imp && isoOf(t)===h.d ? ` · ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}` : '';
+    const bb=byId(h.batchId);
+    const bn=state.scope==='all' ? ` · <span class="bn" style="--c:${bb?batchColor(bb):'var(--muted)'}"><i></i>${esc(bb?bb.name:h.bn)}</span>` : '';
+    const canDel = admin || h.uid===ME.uid;
+    html+=`<div class="he">${avatar(h.uid,h.an)}<div><div class="meta"><b>${esc(userName(h.uid,h.an))}</b>${hm}${bn}</div><div class="txt">${esc(h.t)}</div></div>`+
+      (canDel?`<button class="x" data-h="${h.id}" aria-label="Usuń wpis">×</button>`:'<span></span>')+`</div>`;
+  });
+  box.innerHTML=html;
+}
+function caption(){
+  if(state.mode==='ferm'){ const b=active(); $('vCap').textContent=b?`${b.name}: ${fmt(b.vol)} l z ${fmt(b.cap)} l, ${STAGES[b.stage].name.toLowerCase()}`:''; }
+  else { const I=fusionInfo(); $('vCap').textContent = I ? `${I.t.name}: ${fmt(I.total)} l z ${fmt(I.t.cap)} l po zmieszaniu` : ''; }
+}
+
+// fuzja
+function renderFusion(){
+  if(!byId(FU.target)) FU.target=(active()||{}).id;
+  const t=byId(FU.target); if(!t) return;
+  $('fuTarget').innerHTML=BATCHES.map(b=>`<option value="${b.id}" ${b.id===FU.target?'selected':''}>${esc(b.name)} ${b.year} (${fmt(b.vol)} z ${fmt(b.cap)} l)</option>`).join('');
+  $('fuTHint').textContent=`${FRUITS[t.fruit].name}, ${YEASTS[t.yeast]}, ${STAGES[t.stage].name.toLowerCase()}`;
+  const rows=$('rows'); rows.innerHTML='';
+  const others=BATCHES.filter(b=>b.id!==t.id);
+  if(!others.length){ rows.innerHTML='<p class="empty">Dodaj drugą partię, żeby coś zmieszać.</p>'; }
+  others.forEach(b=>{
+    const v=Math.min(FU.add[b.id]||0,b.vol); FU.add[b.id]=v;
+    const r=document.createElement('div'); r.className='row'; r.style.setProperty('--c',batchColor(b));
+    r.innerHTML=`<label for="r_${b.id}"><span class="sw"></span>${esc(b.name)}</label>
+      <input type="range" id="r_${b.id}" min="0" max="${b.vol}" step="0.5" value="${v}" ${b.vol<=0?'disabled':''}>
+      <output id="o_${b.id}">${fmt(v)} z ${fmt(b.vol)} l</output>`;
+    rows.appendChild(r);
+    r.querySelector('input').addEventListener('input',e=>{
+      FU.add[b.id]=num(e.target.value); $('o_'+b.id).textContent=`${fmt(FU.add[b.id])} z ${fmt(b.vol)} l`;
+      FU.phase='idle'; fusionStatus(); setTarget(fusionTargets()); caption();
+    });
+  });
+  fusionStatus();
+}
+function fusionStatus(){
+  const I=fusionInfo(), st=$('status'); st.classList.remove('bad');
+  if(!I){ st.textContent=''; return; }
+  const free=I.t.cap-I.total; let msg;
+  if(FU.phase==='done') msg=`Zapisane. ${esc(I.t.name)} ma teraz ${fmt(I.t.vol)} l. Wpisy dodane do historii wszystkich partii.`;
+  else if(I.added===0) msg='Ustaw, ile litrów dolać z innych partii.';
+  else if(free<0){ msg=`Za dużo o ${fmt(-free)} l. Naczynie ${esc(I.t.name)} mieści ${fmt(I.t.cap)} l.`; st.classList.add('bad'); }
+  else if(free<I.t.cap*.08) msg=`Razem ${fmt(I.total)} l, wolne ${fmt(free)} l. Przy burzliwej fermentacji zabraknie miejsca na pianę.`;
+  else if(free>I.t.cap*.2) msg=`Razem ${fmt(I.total)} l, wolne ${fmt(free)} l. Przy cichej fermentacji to dużo powietrza nad winem.`;
+  else msg=`Razem ${fmt(I.total)} l, wolne ${fmt(free)} l. Dobry poziom.`;
+  st.innerHTML=msg;
+  $('mix').disabled = I.added===0 || free<0 || FU.phase==='mixing';
+}
+
+function refresh(){
+  if(!active()){ setTarget({air:0,liq:0,layers:[]}); caption(); return; }
+  if(state.mode==='ferm'){ renderStage(); setTarget(fermTargets(active())); }
+  else { renderFusion(); setTarget(fusionTargets()); }
+  caption();
+}
+function renderAll(){ renderBatches(); renderForm(); renderHistory(); refresh(); }
+function renderMe(){
+  if(!MYDOC) return;
+  $('meBtn').innerHTML=`${avatar(ME.uid)}${esc(MYDOC.name)}`;
+}
+
+// ---------- zdarzenia: partia ----------
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  state.mode=t.dataset.mode;
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
+  $('pFerm').classList.toggle('hidden',state.mode!=='ferm');
+  $('pFusion').classList.toggle('hidden',state.mode!=='fusion');
+  if(state.mode==='fusion'){ FU.target=(active()||{}).id; FU.add={}; FU.phase='idle'; }
+  refresh();
+}));
+
+function newBatch(o){
+  const id=db.collection('batches').doc().id;
+  const sy=selYear();
+  const b=normBatch(mk(Object.assign({name:`Partia ${visible().length+1}`,year:sy==='all'?new Date().getFullYear():sy},o&&o.name?o:{}, {id})));
+  BATCHES.push(b); setActive(id); if(sy!=='all') setYear(b.year);
+  db.collection('batches').doc(id).set(Object.assign(batchData(b),{createdAt:FV().serverTimestamp(),createdBy:ME.uid}))
+    .catch(e=>alert('Nie udało się utworzyć partii: '+authMsg(e)));
+  log(b,'Partia utworzona');
+  if(state.mode!=='ferm') document.querySelector('.tab[data-mode="ferm"]').click();
+  renderAll(); $('fName').focus(); $('fName').select();
+}
+$('esNew').onclick=()=>newBatch();
+
+$('fName').addEventListener('input',e=>{ const b=active();
+  logLater(b,'name',(c,was)=>c.name!==was?`Nazwa: „${was}” → „${c.name}”`:null);   // przed zmianą: zapamiętuje starą nazwę
+  b.name=e.target.value||'Bez nazwy'; save(b); renderBatches(); caption(); });
+$('fFruit').addEventListener('change',e=>{ const b=active(); b.fruit=e.target.value; b.color=null; save(b); log(b,`Owoce: ${FRUITS[b.fruit].name}`); renderBatches(); refresh(); });
+function numField(id,key,min,textFn){
+  $(id).addEventListener('input',e=>{ const b=active(); if(!b) return;
+    logLater(b,key,textFn);           // zapamiętuje wartość sprzed zmiany
+    b[key]=Math.max(min,num(e.target.value)); save(b); renderHints(); renderBatches(); refresh(); });
+}
+$('fYear').addEventListener('change',e=>{ const b=active(); if(!b) return; const y=parseInt(e.target.value,10);
+  if(!(y>=1990&&y<=2100)){ e.target.value=b.year; return; } if(y===b.year) return;
+  const was=b.year; b.year=y; save(b); log(b,`Rocznik: ${was} → ${y}`); setActive(b.id); if(selYear()!=='all') setYear(y); renderAll(); });
+numField('fCap','cap',.5,(c,was)=>r2(c.cap)!==r2(was)?`Pojemność naczynia: z ${fmt(was)} na ${fmt(c.cap)} l`:null);
+numField('fVol','vol',0,(c,was)=>diffText('Wino w naczyniu','l',c.vol,was));
+numField('fYeast','yeastG',0,(c,was)=>diffText(`Drożdże ${YEASTS[c.yeast]}`,'g',c.yeastG,was,sachets(c.yeastG)));
+numField('fNut','nutG',0,(c,was)=>diffText('Pożywka','g',c.nutG,was));
+const propTxt=c=>{ const N=nastaw(c); return N?`pulpa ${Math.round(N.p)}%, cukier ${Math.round(N.s)}%, woda ${Math.round(N.w)}%`:''; };
+numField('fPulpa','pulpaL',0,(c,was)=>diffText('Owoce / pulpa','l',c.pulpaL,was,propTxt(c)));
+numField('fSugar','sugarKg',0,(c,was)=>diffText('Cukier','kg',c.sugarKg,was,propTxt(c)));
+numField('fWater','waterL',0,(c,was)=>diffText('Woda','l',c.waterL,was,propTxt(c)));
+document.querySelectorAll('[data-step]').forEach(btn=>btn.addEventListener('click',()=>{
+  const [id,d]=btn.dataset.step.split(':'), inp=$(id);
+  inp.value=Math.max(0,Math.round((num(inp.value)+num(d))*100)/100); inp.dispatchEvent(new Event('input'));
+}));
+
+$('next').onclick=()=>{ const b=active(); if(b.stage<STAGES.length-1){ b.stage++; save(b); log(b,`Etap: ${STAGES[b.stage].name}`); refresh(); } };
+$('prev').onclick=()=>{ const b=active(); if(b.stage>0){ b.stage--; save(b); log(b,`Cofnięto do etapu: ${STAGES[b.stage].name}`); refresh(); } };
+
+$('hAdd').onclick=()=>{
+  const b=active(); if(!b) return;
+  const t=$('hText').value.trim(); if(!t){ $('hText').focus(); return; }
+  log(b,t,$('hDate').value||today()); $('hText').value=''; $('hDate').value=today();
+};
+$('hText').addEventListener('keydown',e=>{ if(e.key==='Enter') $('hAdd').click(); });
+$('hist').addEventListener('click',e=>{
+  const id=e.target.dataset&&e.target.dataset.h; if(!id) return;
+  const h=HIST.find(x=>x.id===id); if(!h) return;
+  if(!confirm(`Usunąć wpis „${h.t}”?`)) return;
+  db.collection('history').doc(id).delete().catch(err=>alert('Nie udało się usunąć: '+authMsg(err)));
+});
+document.querySelectorAll('#hScope .chip').forEach(c=>c.onclick=()=>{ state.scope=c.dataset.scope; renderHistory(); });
+
+$('del').onclick=async()=>{
+  const b=active(); if(!b) return;
+  if(!confirm(`Usunąć partię „${b.name}” razem z jej historią?`)) return;
+  try{
+    const hs=HIST.filter(h=>h.batchId===b.id);
+    for(let i=0;i<hs.length||i===0;i+=400){
+      const wb=db.batch(); if(i===0) wb.delete(db.collection('batches').doc(b.id));
+      hs.slice(i,i+400).forEach(h=>wb.delete(db.collection('history').doc(h.id)));
+      await wb.commit(); if(!hs.length) break;
+    }
+    clearTimeout(saveT[b.id]); delete saveT[b.id];
+    BATCHES=BATCHES.filter(x=>x.id!==b.id); if(BATCHES[0]) setActive(BATCHES[0].id);
+    renderAll();
+  }catch(e){ alert('Nie udało się usunąć partii: '+authMsg(e)); }
+};
+
+// ---------- zdarzenia: fuzja ----------
+$('fuTarget').addEventListener('change',e=>{ FU.target=e.target.value; FU.add={}; FU.phase='idle'; refresh(); });
+$('clear').onclick=()=>{ FU.add={}; FU.phase='idle'; refresh(); };
+$('mix').onclick=()=>{
+  const I=fusionInfo(); if(!I||I.added===0) return;
+  FU.phase='mixing'; fusionStatus(); setTarget(fusionTargets());
+  setTimeout(async()=>{
+    if(FU.phase!=='mixing') return;
+    const J=fusionInfo(); if(!J) return;
+    const parts=J.src.map(b=>`${b.name} ${fmt(FU.add[b.id])} l`).join(', ');
+    const wb=db.batch(), H=db.collection('history'), B=db.collection('batches');
+    J.src.forEach(b=>{ const l=FU.add[b.id]; b.vol=Math.max(0,r2(b.vol-l));
+      wb.update(B.doc(b.id),{vol:b.vol,updatedAt:FV().serverTimestamp(),updatedBy:ME.uid});
+      wb.set(H.doc(),histDoc(b,`Przelano ${fmt(l)} l do partii ${J.t.name}`)); });
+    J.t.vol=r2(J.total); J.t.color=toHex(J.mix);
+    wb.update(B.doc(J.t.id),{vol:J.t.vol,color:J.t.color,updatedAt:FV().serverTimestamp(),updatedBy:ME.uid});
+    wb.set(H.doc(),histDoc(J.t,`Fuzja: dolano ${parts}. Razem ${fmt(J.t.vol)} l.`));
+    try{ await wb.commit(); }catch(e){ alert('Nie udało się zapisać fuzji: '+authMsg(e)); FU.phase='idle'; refresh(); return; }
+    let fr=0; for(const id in cur){ if(id.startsWith('c_')){ fr+=cur[id].frac; delete cur[id]; } }
+    if(cur.f_base) cur.f_base.frac+=fr;
+    FU.add={}; FU.phase='done';
+    renderBatches(); renderFusion(); setTarget(fusionTargets()); caption();
+  },1800);
+};
+
+// ---------- eksport / import ----------
+$('exp').onclick=()=>{
+  const out={app:'butla',v:2,exported:new Date().toISOString(),
+    batches:BATCHES.map(b=>Object.assign({id:b.id},batchData(b),{
+      history:HIST.filter(h=>h.batchId===b.id).map(h=>({d:h.d,t:h.t,ts:tsMs(h.ts)||null,an:userName(h.uid,h.an)}))}))};
+  const orphans=HIST.filter(h=>!byId(h.batchId));
+  if(orphans.length) out.orphanHistory=orphans.map(h=>({batchId:h.batchId,bn:h.bn,d:h.d,t:h.t,ts:tsMs(h.ts)||null,an:userName(h.uid,h.an)}));
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`butla-${today()}.json`;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+};
+$('impBtn').onclick=$('esImp').onclick=()=>$('imp').click();
+$('imp').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=async()=>{
+    e.target.value='';
+    let d; try{ d=JSON.parse(r.result); }catch(err){ alert('To nie jest plik JSON.'); return; }
+    const src = Array.isArray(d) ? d : (d && (d.batches||d.partie||(d.data&&d.data.batches)));
+    if(!Array.isArray(src)||!src.length){ alert('Ten plik nie wygląda na eksport z Butli.'); return; }
+    const topHist = Array.isArray(d.history) ? d.history : [];
+    const plan=src.map(o=>{
+      const id=String(o.id||db.collection('batches').doc().id).replace(/\//g,'_');
+      const b=normBatch(Object.assign({},o,{id}));
+      const hs=[...(Array.isArray(o.history)?o.history:[]), ...topHist.filter(h=>h.batchId===o.id)]
+        .filter(h=>h&&(h.t||h.text)).map(h=>({d:/^\d{4}-\d{2}-\d{2}$/.test(h.d||h.date||'')?(h.d||h.date):today(), t:String(h.t||h.text), ts:h.ts, an:h.an||h.author||null}));
+      if(o.year==null && o.rocznik==null && hs.length) b.year=Math.min(...hs.map(h=>+h.d.slice(0,4)));
+      return {b,hs};
+    });
+    const nh=plan.reduce((s,p)=>s+p.hs.length,0);
+    const clash=plan.filter(p=>byId(p.b.id)).length;
+    if(!confirm(`Zaimportować ${plan.length} partii i ${nh} wpisów historii?`+(clash?`\n${clash} partii o tych samych identyfikatorach zostanie nadpisanych.`:''))) return;
+    try{
+      const ops=[];
+      plan.forEach(({b,hs})=>{
+        ops.push(wb=>wb.set(db.collection('batches').doc(b.id),Object.assign(batchData(b),{createdAt:FV().serverTimestamp(),createdBy:ME.uid,updatedAt:FV().serverTimestamp(),updatedBy:ME.uid})));
+        hs.forEach(h=>{
+          const ms = typeof h.ts==='number' && h.ts>0 ? h.ts : new Date(h.d+'T12:00').getTime();
+          const doc={batchId:b.id,bn:b.name,d:h.d,t:h.t,ts:firebase.firestore.Timestamp.fromMillis(ms),uid:ME.uid,imp:true};
+          if(h.an) doc.an=String(h.an);
+          ops.push(wb=>wb.set(db.collection('history').doc(),doc));
+        });
+      });
+      for(let i=0;i<ops.length;i+=400){ const wb=db.batch(); ops.slice(i,i+400).forEach(fn=>fn(wb)); await wb.commit(); }
+      setActive(plan[0].b.id); setYear(plan[0].b.year);
+      alert(`Zaimportowano ${plan.length} partii i ${nh} wpisów.`);
+    }catch(err){ alert('Import nie powiódł się: '+authMsg(err)); }
+  };
+  r.readAsText(f);
+});
+$('esSeed').onclick=async()=>{
+  const items=[
+    {b:{year:2026,name:'Weronika',fruit:'ciemne',cap:30,vol:18,yeast:'uni',yeastG:5,stage:2,pulpaL:0,sugarKg:0,waterL:0},
+     hs:[['2026-10-05','Odcedzona, około 18 l. Wiadro uszczelnione folią, rurka pracuje.'],
+         ['2026-10-05','Plan: dolać 5 l Malagi i 5 l Sherry (razem ok. 28 l).']]},
+    {b:{year:2026,name:'Pacjent Zero',fruit:'ciemne',cap:5,vol:4.5,yeast:'uni',yeastG:5,stage:1,pulpaL:0,sugarKg:0,waterL:0},
+     hs:[['2026-10-03','Nastaw półsłodkiego, 5 l.']]},
+    {b:{year:2026,name:'Malaga',fruit:'ciemne',cap:15,vol:15,yeast:'malaga',yeastG:5,stage:1,pulpaL:0,sugarKg:0,waterL:0},
+     hs:[['2026-10-05','Plan: 5 l do Weroniki, 10 l zostaje do porównania.']]},
+    {b:{year:2026,name:'Sherry',fruit:'ciemne',cap:15,vol:15,yeast:'sherry',yeastG:5,stage:1,pulpaL:0,sugarKg:0,waterL:0},
+     hs:[['2026-10-05','Plan: 5 l do Weroniki, 10 l zostaje do porównania.']]},
+  ];
+  try{
+    const wb=db.batch(); let first=null;
+    items.forEach(({b,hs})=>{
+      const ref=db.collection('batches').doc(); first=first||ref.id;
+      const nb=normBatch(Object.assign({id:ref.id},b));
+      wb.set(ref,Object.assign(batchData(nb),{createdAt:FV().serverTimestamp(),createdBy:ME.uid}));
+      hs.forEach(([d,t])=>wb.set(db.collection('history').doc(),histDoc(nb,t,d)));
+    });
+    await wb.commit(); setActive(first);
+  }catch(e){ alert('Nie udało się: '+authMsg(e)); }
+};
+
+// ---------- konto i użytkownicy ----------
+$('meBtn').onclick=()=>{ renderUsers(); $('pwErr').textContent=''; $('nuErr').textContent=''; $('dlgUsers').showModal(); };
+$('duClose').onclick=()=>$('dlgUsers').close();
+$('logout').onclick=$('naOut').onclick=async()=>{ if(db&&ME) flushPending(); try{$('dlgUsers').close();}catch(e){} await auth.signOut(); };
+function renderUsers(){
+  if(!MYDOC) return;
+  const admin=MYDOC.role==='admin';
+  $('duMe').innerHTML=`<p class="empty">Zalogowany: <b>${esc(MYDOC.name)}</b> (login ${esc(MYDOC.login)}${admin?', administrator':''})</p>`;
+  const list=Object.entries(USERS).sort((a,b)=>(b[1].role==='admin')-(a[1].role==='admin')||a[1].name.localeCompare(b[1].name,'pl'));
+  $('duList').innerHTML=list.map(([uid,u])=>`<li>${avatar(uid)}<div>${esc(u.name)} <small>${esc(u.login)}${u.role==='admin'?' · administrator':''}</small></div>`+
+    (admin&&uid!==ME.uid?`<span class="chips"><button class="btn ghost small" data-role="${uid}">${u.role==='admin'?'Odbierz administratora':'Nadaj administratora'}</button><button class="btn danger small" data-rm="${uid}">Odbierz dostęp</button></span>`:'<span></span>')+`</li>`).join('');
+  $('duAdd').classList.toggle('hidden',!admin);
+}
+$('duList').addEventListener('click',async e=>{
+  const ru=e.target.dataset&&e.target.dataset.role;
+  if(ru){ const u=USERS[ru]; if(!u) return; const to=u.role==='admin'?'user':'admin';
+    if(!confirm(to==='admin'?`Nadać ${u.name} uprawnienia administratora?`:`Odebrać ${u.name} uprawnienia administratora?`)) return;
+    try{ await db.collection('users').doc(ru).update({role:to}); }catch(err){ alert(authMsg(err)); } return; }
+  const uid=e.target.dataset&&e.target.dataset.rm; if(!uid) return;
+  const u=USERS[uid]; if(!confirm(`Odebrać dostęp użytkownikowi ${u?u.name:uid}? Jego wpisy w historii zostaną.`)) return;
+  try{ await db.collection('users').doc(uid).delete(); }catch(err){ alert(authMsg(err)); }
+});
+$('pwBtn').onclick=async()=>{
+  const p=$('pwNew').value; $('pwErr').textContent='';
+  if(p.length<6){ $('pwErr').textContent='Hasło musi mieć co najmniej 6 znaków.'; return; }
+  try{ await auth.currentUser.updatePassword(p); $('pwNew').value=''; $('pwErr').textContent='Hasło zmienione.'; }
+  catch(e){ $('pwErr').textContent=authMsg(e); }
+};
+let secondary=null;
+$('nuBtn').onclick=async()=>{
+  const login=normLogin($('nuLogin').value), name=$('nuName').value.trim()||login, pw=$('nuPass').value;
+  const err=$('nuErr'); err.textContent='';
+  if(!LOGIN_RE.test(login)){ err.textContent='Login: 2–30 znaków, małe litery bez polskich znaków, cyfry, kropka, myślnik.'; return; }
+  if(pw.length<6){ err.textContent='Hasło musi mieć co najmniej 6 znaków.'; return; }
+  if(Object.values(USERS).some(u=>u.login===login)){ err.textContent='Taki użytkownik już ma dostęp.'; return; }
+  $('nuBtn').disabled=true; err.textContent='Dodawanie…';
+  try{
+    // druga instancja aplikacji, żeby założenie konta nie wylogowało administratora
+    secondary = secondary || firebase.initializeApp(CFG,'secondary');
+    const sa=secondary.auth(); let cred;
+    try{ cred=await sa.createUserWithEmailAndPassword(`${login}@${DOMAIN}`,pw); }
+    catch(e){
+      if(!/email-already-in-use/.test(e.code||'')) throw e;
+      try{ cred=await sa.signInWithEmailAndPassword(`${login}@${DOMAIN}`,pw); }
+      catch(e2){ throw {code:'x',message:'Ten login był już kiedyś używany. Podaj jego dawne hasło albo wybierz inny login.'}; }
+    }
+    const uid=cred.user.uid; await sa.signOut();
+    await db.collection('users').doc(uid).set({login,name,role:'user',color:USER_COLORS[Object.keys(USERS).length%USER_COLORS.length],
+      createdAt:FV().serverTimestamp(),createdBy:ME.uid});
+    $('nuLogin').value=$('nuName').value=$('nuPass').value='';
+    err.textContent=`Dodano: ${name}. Przekaż login „${login}” i hasło.`;
+  }catch(e){ err.textContent=authMsg(e); }
+  finally{ $('nuBtn').disabled=false; }
+};
+
+// ---------- logowanie ----------
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault(); $('lErr').textContent='';
+  const login=normLogin($('lLogin').value);
+  if(!LOGIN_RE.test(login)){ $('lErr').textContent='Zły login lub hasło.'; return; }
+  $('lBtn').disabled=true;
+  try{ await auth.signInWithEmailAndPassword(`${login}@${DOMAIN}`,$('lPass').value); $('lPass').value=''; }
+  catch(err){ $('lErr').textContent=authMsg(err); }
+  finally{ $('lBtn').disabled=false; }
+});
+$('setupForm').addEventListener('submit',async e=>{
+  e.preventDefault(); const err=$('sErr'); err.textContent='';
+  const login=normLogin($('sLogin').value), name=$('sName').value.trim(), pw=$('sPass').value;
+  if(!LOGIN_RE.test(login)){ err.textContent='Login: 2–30 znaków, małe litery bez polskich znaków, cyfry, kropka, myślnik.'; return; }
+  if(!name){ err.textContent='Podaj imię.'; return; }
+  if(pw.length<6){ err.textContent='Hasło musi mieć co najmniej 6 znaków.'; return; }
+  if(pw!==$('sPass2').value){ err.textContent='Hasła się różnią.'; return; }
+  $('sBtn').disabled=true; settingUp=true;
+  try{
+    let cred;
+    try{ cred=await auth.createUserWithEmailAndPassword(`${login}@${DOMAIN}`,pw); }
+    catch(e1){ if(/email-already-in-use/.test(e1.code||'')) cred=await auth.signInWithEmailAndPassword(`${login}@${DOMAIN}`,pw); else throw e1; }
+    const uid=cred.user.uid, wb=db.batch();
+    wb.set(db.collection('meta').doc('setup'),{adminUid:uid,createdAt:FV().serverTimestamp()});
+    wb.set(db.collection('users').doc(uid),{login,name,role:'admin',color:USER_COLORS[0],createdAt:FV().serverTimestamp()});
+    await wb.commit();
+  }catch(e2){
+    settingUp=false; err.textContent=authMsg(e2);
+    if(auth.currentUser) await auth.signOut();
+  }finally{ $('sBtn').disabled=false; }
+});
+
+// ---------- dane na żywo ----------
+function stopData(){ dataUnsubs.forEach(u=>u()); dataUnsubs=[]; dataOn=false; loaded={b:false,h:false,u:false}; }
+function onDataErr(e){
+  if(/permission-denied/.test(e.code||'')){ stopData(); $('naMsg').textContent='To konto nie ma (już) dostępu do Butli. Poproś administratora o dodanie.'; show('scrNoAccess'); }
+  else console.error(e);
+}
+function maybeShowApp(){
+  if(loaded.b&&loaded.h&&loaded.u){
+    if($('app').classList.contains('hidden')){ show('app'); if(!looping){ looping=true; requestAnimationFrame(loop); } }
+    renderMe(); renderAll();
+  }
+}
+function startData(){
+  dataOn=true;
+  dataUnsubs.push(db.collection('users').onSnapshot(s=>{
+    USERS={}; s.forEach(d=>USERS[d.id]=d.data()); loaded.u=true;
+    if($('dlgUsers').open) renderUsers();
+    maybeShowApp();
+  },onDataErr));
+  dataUnsubs.push(db.collection('batches').onSnapshot(s=>{
+    BATCHES=s.docs.map(d=>{
+      if(saveT[d.id]){ const loc=byId(d.id); if(loc) return loc; }   // lokalna edycja jeszcze nie zapisana
+      return normBatch(Object.assign({id:d.id},d.data({serverTimestamps:'estimate'})));
+    }).sort((a,b)=>tsMs(a.createdAt)-tsMs(b.createdAt) || a.name.localeCompare(b.name,'pl'));
+    loaded.b=true; maybeShowApp();
+  },onDataErr));
+  dataUnsubs.push(db.collection('history').onSnapshot(s=>{
+    HIST=s.docs.map(d=>Object.assign({id:d.id},d.data({serverTimestamps:'estimate'})));
+    loaded.h=true; if(loaded.b&&loaded.u) renderHistory(); maybeShowApp();
+  },onDataErr));
+}
+
+async function showEntry(){
+  show('scrLoading'); $('loadMsg').textContent='Łączenie…';
+  try{
+    const s=await db.collection('meta').doc('setup').get();
+    show(s.exists?'scrLogin':'scrSetup');
+  }catch(e){ show('scrLogin'); $('lErr').textContent=/permission-denied/.test(e.code||'')?'':authMsg(e); }
+}
+
+function boot(){
+  CFG = FIREBASE_CONFIG || storedConfig();
+  if(!CFG){ show('scrConfig'); return; }
+  try{ firebase.initializeApp(CFG); auth=firebase.auth(); db=firebase.firestore(); }
+  catch(e){ show('scrConfig'); $('cfgErr').textContent='Błąd konfiguracji: '+e.message; return; }
+  auth.onAuthStateChanged(u=>{
+    if(meUnsub){ meUnsub(); meUnsub=null; } stopData();
+    ME=u; MYDOC=null;
+    if(!u){ show(''); showEntry(); return; }
+    show('scrLoading'); $('loadMsg').textContent='Wczytywanie…';
+    meUnsub=db.collection('users').doc(u.uid).onSnapshot(s=>{
+      if(!s.exists){
+        if(settingUp) return;     // konto administratora właśnie się zapisuje
+        stopData(); $('naMsg').textContent='To konto nie ma dostępu do Butli. Poproś administratora o dodanie.'; show('scrNoAccess'); return;
+      }
+      settingUp=false; MYDOC=s.data();
+      if(!dataOn){ show('scrLoading'); startData(); }
+      renderMe(); if(loaded.h) renderHistory();
+    },e=>{ if(settingUp) return; onDataErr(e); });
+  });
+}
+boot();
+})();
+</script>
+</body>
+</html>

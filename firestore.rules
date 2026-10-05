@@ -1,0 +1,54 @@
+rules_version = '2';
+// Butla – reguły Firestore. Dostęp mają tylko użytkownicy z dokumentem users/{uid}.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function userPath(uid) { return /databases/$(db)/documents/users/$(uid); }
+    function member() { return signedIn() && exists(userPath(request.auth.uid)); }
+    function admin() { return member() && get(userPath(request.auth.uid)).data.role == 'admin'; }
+    function setupPath() { return /databases/$(db)/documents/meta/setup; }
+
+    // Znacznik pierwszego uruchomienia. Czytelny dla każdego (zawiera tylko uid admina),
+    // żeby ekran startowy wiedział, czy pokazać logowanie, czy zakładanie admina.
+    match /meta/setup {
+      allow get: if true;
+      allow create: if signedIn()
+        && !exists(setupPath())
+        && request.resource.data.adminUid == request.auth.uid
+        && getAfter(userPath(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if false;
+    }
+
+    match /users/{uid} {
+      // własny dokument można odczytać zawsze (aplikacja sprawdza, czy ma dostęp)
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow read: if member();
+      allow create: if admin()
+        || (signedIn() && request.auth.uid == uid
+            && !exists(setupPath())
+            && getAfter(setupPath()).data.adminUid == uid
+            && request.resource.data.role == 'admin');
+      // admin zmienia wszystko; użytkownik tylko swoje imię i kolor
+      allow update: if admin()
+        || (member() && request.auth.uid == uid
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.login == resource.data.login);
+      allow delete: if admin() && uid != request.auth.uid;
+    }
+
+    match /batches/{id} {
+      allow read, write: if member();
+    }
+
+    match /history/{id} {
+      allow read: if member();
+      allow create: if member() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      // usuwa autor, admin, albo każdy członek razem z usuwaną partią
+      allow delete: if member() && (
+        resource.data.uid == request.auth.uid
+        || admin()
+        || !existsAfter(/databases/$(db)/documents/batches/$(resource.data.batchId)));
+    }
+  }
+}
