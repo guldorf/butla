@@ -58,7 +58,6 @@ header .io{grid-column:3;justify-self:end;align-self:start}
 input[type=text],input[type=number],input[type=date],input[type=password],select,textarea{border-color:var(--accent-soft)}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(103,180,55,.2)}
 .btn.ghost:hover,.chip:hover,.stepper button:hover{border-color:var(--accent)}
-.he+.he{border-top-color:var(--accent-soft)}
 .ulist li{border-bottom-color:var(--accent-soft)}
 .alarm{margin:14px 0 0;padding:10px 14px;border-radius:10px;font-size:14px;border:1px solid var(--line);background:var(--surface)}
 .alarm.bad{background:var(--alarm-bg);color:var(--warn);border-color:var(--warn);font-weight:600}
@@ -68,6 +67,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .chip.dragging{opacity:.9;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:5;position:relative;cursor:grabbing}
 #batches .chip:not(.add){touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .io{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+/* menu dźwięku */
+.snd{position:relative}
+.snd summary{list-style:none;display:inline-flex;align-items:center;gap:6px;padding:5px 12px 5px 9px;border-radius:999px;
+  border:1.5px solid var(--accent-soft);background:var(--surface);font-size:14px;cursor:pointer;color:var(--muted)}
+.snd summary::-webkit-details-marker{display:none}
+.snd summary svg{width:18px;height:18px}
+.snd:not(.on) summary .w{opacity:.25}
+.snd.on summary{color:var(--ink);border-color:var(--accent)}
+.snd.on summary svg{color:var(--accent)}
+.sndp{position:absolute;right:0;top:calc(100% + 6px);z-index:20;display:grid;gap:8px;min-width:220px;padding:12px 14px;
+  background:var(--surface);border:1.5px solid var(--accent-soft);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);font-size:14px}
+.sndp label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.sndp input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.sndp .vol{display:grid;gap:2px;color:var(--muted)}
 .batches{margin:12px 0 4px}
 .bgrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;padding-bottom:4px}
 .bcol{display:flex;flex-direction:column;gap:6px;min-height:40px;border-radius:12px;padding:3px;transition:background .15s}
@@ -112,12 +125,6 @@ textarea{font-family:ui-monospace,Consolas,monospace;font-size:13px;min-height:1
 .stepper button{flex:none;width:42px;border-radius:9px;border:1.5px solid var(--line);background:var(--surface);
   color:var(--ink);font:inherit;font-size:20px;cursor:pointer}
 .hint{font-size:13px;color:var(--muted);margin-top:4px}
-.steps{list-style:none;margin:0 0 14px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.steps li{font-size:13px;line-height:1.3;color:var(--muted);padding-top:8px;border-top:3px solid var(--line)}
-.steps li.done{border-top-color:var(--accent-soft)}
-.steps li.now{border-top-color:var(--accent);color:var(--ink);font-weight:600}
-.steps input[type=date]{margin-top:4px;padding:3px 4px;font-size:12px;border-radius:6px;font-weight:400}
-.steps .est{display:block;font-size:12px;margin-top:4px;font-weight:400}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
 .card h3{font-size:19px;margin:0 0 2px}
 .card .time{font-size:14px;color:var(--muted);margin:0 0 8px}
@@ -148,20 +155,37 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .side{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 16px 8px;
   position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
 @media (max-width:1180px){.side{position:static;max-height:none}}
-.side h2{font-size:21px;margin:0 0 10px}
-.side .addrow{display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0 4px}
-.side .addrow .two{display:grid;grid-template-columns:1fr auto;gap:8px}
-.hlist{overflow-y:auto;margin:10px -6px 0;padding:0 6px}
-.day{font-weight:500;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--accent-soft)}
-.day:first-child{margin-top:0}
-.he{display:grid;grid-template-columns:28px 1fr auto;gap:10px;padding:8px 0;align-items:start}
-.he+.he{border-top:1px dashed var(--line)}
-.he .meta{font-size:13px;color:var(--muted)}
-.he .meta b{color:var(--ink);font-weight:600}
-.he .txt{overflow-wrap:anywhere}
-.he .bn{display:inline-flex;align-items:center;gap:5px;font-size:13px}
-.he .bn i{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block}
-.he .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+.side h2{font-size:21px;margin:0 0 14px}
+.side .actions{margin-top:10px}
+/* oś czasu etapów */
+.tl{list-style:none;margin:0 -6px;padding:0 6px;overflow-y:auto;min-height:0}
+.tl>li{position:relative;padding:0 0 16px 28px}
+.tl>li::before{content:"";position:absolute;left:7px;top:20px;bottom:0;border-left:2px solid var(--accent)}
+.tl>li.now::before,.tl>li.future::before{border-left:2px dashed var(--line)}
+.tl>li:last-child::before{display:none}
+.tl .dot{position:absolute;left:0;top:4px;width:16px;height:16px;border-radius:50%;border:2px solid var(--accent);background:var(--accent)}
+.tl .now .dot{box-shadow:0 0 0 5px rgba(103,180,55,.22)}
+.tl .future .dot{background:var(--surface);border-color:var(--line)}
+.tl .sh{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:24px}
+.tl .sn{font-weight:500}
+.tl .now .sn{font-weight:600}
+.tl .future .sn{color:var(--muted)}
+.tl .sh input[type=date]{width:auto;padding:2px 6px;font-size:13px;border-radius:6px}
+.tl .est{font-size:13px;color:var(--muted)}
+.tl .desc{margin:8px 0 2px;padding:10px 12px;border-left:4px solid var(--accent);background:var(--bg);border-radius:8px;font-size:14px}
+.tl .desc p{margin:0}
+.tl .desc .time{color:var(--muted);font-size:13px;margin:0 0 4px}
+.tl .notes{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:7px}
+.tl .note{display:grid;grid-template-columns:40px 1fr auto;gap:6px;font-size:14px;line-height:1.4;align-items:start}
+.tl .note .nd{color:var(--muted);font-size:12.5px;padding-top:1px;font-variant-numeric:tabular-nums}
+.tl .note div{overflow-wrap:anywhere}
+.tl .note small{color:var(--muted);font-size:12px}
+.tl .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:17px;line-height:1;padding:0 4px}
+.tl .addb{appearance:none;background:none;border:1px dashed var(--accent-soft);color:var(--muted);border-radius:8px;font:inherit;font-size:13px;padding:2px 10px;margin-top:8px;cursor:pointer}
+.tl .addb:hover{border-color:var(--accent);color:var(--ink)}
+.tl .addf{display:grid;gap:6px;margin-top:8px}
+.tl .addf .two{display:flex;flex-wrap:wrap;gap:6px}
+.tl .addf input[type=date]{padding:6px 8px;flex:1 1 140px;width:auto;min-width:0}
 .av{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;
   font-size:12px;font-weight:600;flex:none;letter-spacing:.02em}
 .me{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:999px;border:1.5px solid var(--line);
@@ -258,9 +282,15 @@ dialog h3{font-size:17px;margin:18px 0 8px}
       <h1 class="logo"><svg viewBox="0 0 191 124" role="img" aria-label="Si qu’a la font"><use href="#logoSym"/></svg><span class="sr">Butla</span></h1>
     </div>
     <div class="io">
-      <button class="btn ghost small" id="exp">Eksportuj dane</button>
-      <button class="btn ghost small" id="impBtn">Importuj dane</button>
-      <input type="file" id="imp" accept="application/json" class="hidden">
+      <details class="snd" id="sndMenu">
+        <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path class="w" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Dźwięk</summary>
+        <div class="sndp">
+          <label><input type="checkbox" id="sndOn"> Włączony</label>
+          <label><input type="checkbox" id="sndBub"> Bąbelki wina</label>
+          <label><input type="checkbox" id="sndMonk"> Mruczenie mnichów</label>
+          <label class="vol">Głośność <input type="range" id="sndVol" min="0" max="100" step="5"></label>
+        </div>
+      </details>
       <button class="me" id="meBtn" aria-haspopup="dialog"></button>
     </div>
   </header>
@@ -270,10 +300,9 @@ dialog h3{font-size:17px;margin:18px 0 8px}
 
   <div class="emptyState hidden" id="emptyState">
     <h2>Nie ma jeszcze żadnej partii</h2>
-    <p class="empty">Załóż pierwszą, zaimportuj eksport z poprzedniej wersji albo wczytaj obecne partie.</p>
+    <p class="empty">Załóż pierwszą albo wczytaj obecne partie.</p>
     <div class="actions">
       <button class="btn" id="esNew">+ Nowa partia</button>
-      <button class="btn ghost" id="esImp">Importuj dane</button>
       <button class="btn ghost" id="esSeed">Wczytaj Weronikę, Pacjenta Zero, Malagę i Sherry</button>
     </div>
   </div>
@@ -339,20 +368,6 @@ dialog h3{font-size:17px;margin:18px 0 8px}
             </div>
 
             <div class="block">
-              <h2>Etap</h2>
-              <ol class="steps" id="steps"></ol>
-              <div class="card">
-                <h3 id="stName"></h3>
-                <p class="time" id="stTime"></p>
-                <p id="stText"></p>
-              </div>
-              <div class="actions">
-                <button class="btn" id="next">Kolejny etap</button>
-                <button class="btn ghost" id="prev">Poprzedni etap</button>
-              </div>
-            </div>
-
-            <div class="block">
               <h2>Klonowanie</h2>
               <p class="hint" style="margin:0 0 10px">Ten sam nastaw w kilku butelkach: kopie dostają te same dane i historię, a dalej prowadzisz je osobno.</p>
               <div class="clone">
@@ -414,21 +429,14 @@ dialog h3{font-size:17px;margin:18px 0 8px}
       </div>
     </div>
 
-    <!-- HISTORIA -->
+    <!-- ETAPY: oś czasu z notatkami pomiędzy etapami -->
     <aside class="side" aria-labelledby="hTitle">
-      <h2 id="hTitle">Historia zmian</h2>
-      <div class="chips" id="hScope">
-        <button type="button" class="chip small" data-scope="batch" aria-pressed="true">Ta partia</button>
-        <button type="button" class="chip small" data-scope="all" aria-pressed="false" id="scopeAll">Cały rocznik</button>
+      <h2 id="hTitle">Etap</h2>
+      <ol class="tl" id="tl"></ol>
+      <div class="actions">
+        <button class="btn" id="next">Kolejny etap</button>
+        <button class="btn ghost" id="prev">Poprzedni etap</button>
       </div>
-      <div class="addrow">
-        <input type="text" id="hText" placeholder="Np. zmierzone 1060, zanurzona czapa" aria-label="Treść wpisu">
-        <div class="two">
-          <input type="date" id="hDate" aria-label="Data wpisu">
-          <button class="btn small" id="hAdd">Dodaj wpis</button>
-        </div>
-      </div>
-      <div class="hlist" id="hist"></div>
     </aside>
   </div>
 </div>
@@ -592,12 +600,12 @@ $('cfgSave').onclick=()=>{
 let auth=null, db=null, CFG=null, ME=null, MYDOC=null, settingUp=false;
 let USERS={}, BATCHES=[], HIST=[];
 let dataUnsubs=[], meUnsub=null, dataOn=false, loaded={b:false,h:false,u:false};
-const state={mode:'ferm', scope:'batch'};
+const state={mode:'ferm', addAt:null};   // addAt: przy którym etapie otwarte jest dodawanie wpisu
 const FU={target:null, add:{}, phase:'idle'};
 const FV = () => firebase.firestore.FieldValue;
 
 const activeId = () => { try{ return localStorage.getItem('butla.active'); }catch(e){ return null; } };
-function setActive(id){ try{ localStorage.setItem('butla.active',id); }catch(e){} }
+function setActive(id){ state.addAt=null; try{ localStorage.setItem('butla.active',id); }catch(e){} }
 const byId = id => BATCHES.find(b=>b.id===id);
 // kolejność: ręczna (order, nadawana przy przeciąganiu), nowe partie bez order na końcu wg daty utworzenia
 const COLS=5;
@@ -806,7 +814,7 @@ function render(dt){
     gLayers.appendChild(p.g);
   }
   liqAcc+=liq*dt*(RM?.5:1);
-  while(liqAcc>=1){ liqAcc--; if(acc>.05) bubbles.push({x:60+Math.random()*180,y:Y0-4-Math.random()*20,r:1+Math.random()*2.4,v:30+Math.random()*50,w:Math.random()*6,el:null}); }
+  while(liqAcc>=1){ liqAcc--; if(acc>.05){ SND.tick(); } if(acc>.05) bubbles.push({x:60+Math.random()*180,y:Y0-4-Math.random()*20,r:1+Math.random()*2.4,v:30+Math.random()*50,w:Math.random()*6,el:null}); }
   for(let i=bubbles.length-1;i>=0;i--){
     const b=bubbles[i];
     if(!b.el){ b.el=document.createElementNS(NS,'circle'); b.el.setAttribute('fill','#fff'); b.el.setAttribute('fill-opacity','.45'); gBub.appendChild(b.el); }
@@ -820,7 +828,7 @@ function render(dt){
     const b=airB[i];
     if(!b.el){ b.el=document.createElementNS(NS,'circle'); b.el.setAttribute('cx','150'); b.el.setAttribute('fill','#fff'); b.el.setAttribute('fill-opacity','.8'); gAirB.appendChild(b.el); }
     b.y-=34*dt*SPEED; b.r=Math.min(5.5,b.r+9*dt*SPEED);
-    if(b.y<45){ b.el.remove(); airB.splice(i,1); jiggle=Math.min(4,jiggle+2.2); continue; }
+    if(b.y<45){ b.el.remove(); airB.splice(i,1); jiggle=Math.min(4,jiggle+2.2); SND.blub(); continue; }
     b.el.setAttribute('cy',b.y.toFixed(1)); b.el.setAttribute('r',b.r.toFixed(1));
   }
   jiggle*=Math.exp(-dt*3);
@@ -843,6 +851,105 @@ function render(dt){
 }
 let last=performance.now(), looping=false;
 function loop(now){ const dt=Math.min(.05,(now-last)/1000); last=now; step(dt); render(dt); requestAnimationFrame(loop); }
+
+// ---------- dźwięk: bulkanie rurki, bąbelki w winie i mruczenie mnichów (Web Audio, bez plików) ----------
+const SND=(()=>{
+  const S={on:false,bub:true,monk:true,vol:.6};
+  try{ Object.assign(S,JSON.parse(localStorage.getItem('butla.snd')||'{}')); }catch(e){}
+  const keep=()=>{ try{ localStorage.setItem('butla.snd',JSON.stringify(S)); }catch(e){} };
+  let A=null, chantT=null, offT=null;
+  function impulse(ctx,sec,decay){   // pogłos kamiennego kościoła
+    const n=Math.round(ctx.sampleRate*sec), buf=ctx.createBuffer(2,n,ctx.sampleRate);
+    for(let c=0;c<2;c++){ const d=buf.getChannelData(c); for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,decay); }
+    return buf;
+  }
+  function build(ctx){
+    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-16; comp.ratio.value=4; comp.connect(ctx.destination);
+    const master=ctx.createGain(); master.gain.value=0; master.connect(comp);
+    const rev=ctx.createConvolver(); rev.buffer=impulse(ctx,5.5,3); const wet=ctx.createGain(); wet.gain.value=.5; rev.connect(wet); wet.connect(master);
+    const bubG=ctx.createGain(), monkG=ctx.createGain(), bubSend=ctx.createGain(), monkSend=ctx.createGain();
+    bubSend.gain.value=.15; monkSend.gain.value=.9;
+    bubG.connect(master); bubG.connect(bubSend); bubSend.connect(rev);
+    monkG.connect(master); monkG.connect(monkSend); monkSend.connect(rev);
+    // pękający pęcherz w wodzie: krótki sinus z szybko rosnącą wysokością
+    function bloop(t,f0,f1,dur,amp){
+      const o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine';
+      o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(amp,t+.004); g.gain.exponentialRampToValueAtTime(.0005,t+dur*1.6);
+      o.connect(g); g.connect(bubG); o.start(t); o.stop(t+dur*1.7);
+    }
+    const blub=()=>{ const t=ctx.currentTime+.01, f=200+Math.random()*120;
+      bloop(t,f,f*2.6,.07,1.4); if(Math.random()<.7) bloop(t+.05+Math.random()*.05,f*1.3,f*3,.05,.6); };
+    const tick=()=>{ const t=ctx.currentTime+.01+Math.random()*.04, f=900+Math.random()*1800; bloop(t,f,f*1.7,.018,.08+Math.random()*.12); };
+    // mnisi: piły przez filtry formantowe (samogłoski), kilka lekko rozstrojonych głosów na jednym dźwięku
+    const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2600; lp.connect(monkG);
+    const FORM={m:[[280,1],[900,.12],[2400,.03]], u:[[325,1],[700,.35],[2530,.08]], o:[[450,1],[800,.5],[2830,.1]]};
+    function voice(f0,level){
+      const pre=ctx.createGain(), g=ctx.createGain(); pre.gain.value=.5; g.gain.value=0; g.connect(lp);
+      const oscs=[-7,0,6].map(c=>{ const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.value=f0; o.detune.value=c; o.connect(pre); o.start(); return o; });
+      const lfo=ctx.createOscillator(), lg=ctx.createGain(); lfo.frequency.value=4.4+Math.random()*.8; lg.gain.value=f0*.004;
+      lfo.connect(lg); oscs.forEach(o=>lg.connect(o.frequency)); lfo.start();
+      const fil=FORM.m.map(([fr,a],i)=>{ const f=ctx.createBiquadFilter(), fg=ctx.createGain(); f.type='bandpass'; f.frequency.value=fr; f.Q.value=[7,9,12][i]; fg.gain.value=a; pre.connect(f); f.connect(fg); fg.connect(g); return {f,fg}; });
+      return {
+        note(fr,t){ oscs.forEach(o=>o.frequency.setTargetAtTime(fr,t,.07)); lg.gain.setTargetAtTime(fr*.004,t,.1); },
+        vowel(v,t,tc){ FORM[v].forEach(([fr,a],i)=>{ fil[i].f.frequency.setTargetAtTime(fr,t,tc); fil[i].fg.gain.setTargetAtTime(a,t,tc); }); },
+        amp(a,t,tc){ g.gain.setTargetAtTime(a*level,t,tc); },
+      };
+    }
+    const drone=[voice(73.42,.55),voice(110,.35)];          // D2 i A2 – stały bordun
+    const mel=voice(146.83,.8), low=voice(73.42,.4);         // melodia unisono i oktawę niżej
+    return {ctx,master,bubG,monkG,blub,tick,drone,mel,low};
+  }
+  // frazy chorałowe w skali doryckiej (D): [dźwięk, czas w sekundach]
+  const N={C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196,A3:220,Bb3:233.08,C4:261.63};
+  const PHRASES=[
+    [['D3',2],['F3',1.5],['G3',1.5],['A3',3],['G3',1.2],['A3',1.2],['F3',1.5],['E3',1.5],['D3',4]],
+    [['A3',2.5],['A3',1.2],['Bb3',1.2],['A3',1.5],['G3',1.5],['A3',2],['G3',1.2],['F3',1.2],['E3',1.5],['D3',4]],
+    [['F3',2],['G3',1.5],['A3',2],['C4',1.5],['A3',1.5],['G3',2],['F3',1.5],['G3',1.5],['E3',2],['D3',4]],
+    [['D3',2],['C3',1.5],['D3',1.5],['F3',2],['E3',1.5],['D3',4]],
+  ];
+  let pi=0;
+  function chant(){
+    if(!A) return;
+    const {ctx,drone,mel,low}=A, P=PHRASES[pi++%PHRASES.length], t0=ctx.currentTime+.05;
+    let t=t0; const tot=P.reduce((s,n)=>s+n[1],0);
+    mel.amp(1,t0,.5); low.amp(1,t0,.5); mel.vowel('m',t0,.3); low.vowel('m',t0,.3);
+    P.forEach(([n,d],i)=>{ mel.note(N[n],t); low.note(N[n]/2,t);
+      const v = i===0 ? 'm' : i<P.length-2 ? (i%3===1?'o':'u') : 'm';   // otwiera się z „mmm” do „o/u” i zamyka
+      mel.vowel(v,t,.35); low.vowel(v,t,.35); t+=d; });
+    mel.amp(0,t-.6,.5); low.amp(0,t-.6,.5);                   // oddech między frazami
+    drone.forEach(v=>{ v.amp(1,t0,1.5); v.amp(.45,t-.4,.6); v.amp(1,t+1,1.2); });
+    chantT=setTimeout(chant,(tot+2+Math.random()*2)*1000);
+  }
+  function apply(){
+    if(!A) return; const t=A.ctx.currentTime;
+    A.master.gain.setTargetAtTime(S.on?S.vol*.9:0,t,.25);
+    A.bubG.gain.setTargetAtTime(S.bub?1:0,t,.2);
+    A.monkG.gain.setTargetAtTime(S.monk?.7:0,t,.6);
+  }
+  function start(){
+    clearTimeout(offT);
+    if(!A){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return; A=build(new C()); A.drone.forEach(v=>v.vowel('m',0,.1)); }
+    A.ctx.resume(); apply();
+    if(!chantT) chant();
+  }
+  function stop(){
+    apply(); clearTimeout(chantT); chantT=null;
+    offT=setTimeout(()=>{ if(A && !S.on) A.ctx.suspend(); },900);
+  }
+  function set(o){ Object.assign(S,o); keep(); if(S.on) start(); else if(A) stop(); syncUI(); }
+  function syncUI(){
+    const m=$('sndMenu'); if(!m) return;
+    m.classList.toggle('on',S.on);
+    $('sndOn').checked=S.on; $('sndBub').checked=S.bub; $('sndMonk').checked=S.monk; $('sndVol').value=Math.round(S.vol*100);
+  }
+  return {
+    S, set, syncUI, build,
+    blub(){ if(A && S.on && S.bub && A.ctx.state==='running') A.blub(); },
+    tick(){ if(A && S.on && S.bub && A.ctx.state==='running' && Math.random()<.35) A.tick(); },
+    resumeIfWanted(){ if(S.on && (!A || A.ctx.state!=='running')) start(); },
+  };
+})();
 
 // ---------- interfejs ----------
 function chip(html,color,pressed,onClick,cls){
@@ -945,7 +1052,6 @@ function renderForm(){
   setv('fCap',b.cap); setv('fVol',b.vol); setv('fYeast',b.yeastG); setv('fNut',b.nutG);
   setv('fPulpa',b.pulpaL); setv('fSugar',b.sugarKg); setv('fSugar2',b.sugarKg2); setv('fWater',b.waterL);
   renderYeast(); renderHints();
-  if(!$('hDate').value) $('hDate').value=today();
   $('del').disabled=!BATCHES.length;
 }
 function renderYeast(){
@@ -1011,42 +1117,50 @@ function stageEstimate(b,j){
   let lo=0, hi=0; for(let i=k;i<j;i++){ lo+=STAGE_DAYS[i][0]; hi+=STAGE_DAYS[i][1]; }
   return [addDays(base,lo),addDays(base,hi)];
 }
+// wpisy zapisywane automatycznie przy zmianie pól i etapów – na osi czasu ich nie pokazujemy (zostają w bazie)
+const AUTO_RE=/^(Partia utworzona|Nazwa: |Owoce: |Rocznik: |Pojemność naczynia: |Wino w naczyniu: |Drożdże|Pożywka: |Owoce \/ pulpa: |Cukier \((I|II) partia\): |Woda: |Etap: |Cofnięto do etapu: |Początek etapu |Sklonowan)/;
+const isNote = h => h.note || h.imp || !AUTO_RE.test(h.t||'');
+// oś czasu: etapy partii, a pod każdym notatki z jego okresu i „+ Dodaj wpis”
 function renderStage(){
-  const b=active(), S=STAGES[b.stage];
-  $('steps').innerHTML=STAGES.map((s,i)=>{
-    let extra='';
-    if(i<=b.stage) extra=`<input type="date" data-sd="${i}" value="${stageDate(b,i)||''}" aria-label="Początek etapu ${s.name}">`;
-    else { const e=stageEstimate(b,i); if(e) extra=`<span class="est">ok. ${shortDate(e[0])}–${shortDate(e[1])}</span>`; }
-    return `<li class="${i<b.stage?'done':i===b.stage?'now':''}">${s.name}${extra}</li>`;
+  const b=active(), box=$('tl');
+  // formularz dodawania nie może zniknąć przy odświeżeniu z bazy
+  const keep = state.addAt!=null && $('tlText') ? {t:$('tlText').value, d:$('tlDate').value, f:document.activeElement&&document.activeElement.id} : null;
+  // początek etapu: zapisany, a dla przyszłych – najwcześniejszy szacunek
+  const eff=STAGES.map((s,i)=>stageDate(b,i) || (i>b.stage ? (stageEstimate(b,i)||[])[0] : null) || null);
+  const notes=STAGES.map(()=>[]);
+  HIST.filter(h=>h.batchId===b.id && isNote(h)).forEach(h=>{
+    let at=0; eff.forEach((d,i)=>{ if(d && d<=h.d) at=i; });
+    notes[at].push(h);
+  });
+  const admin=MYDOC&&MYDOC.role==='admin';
+  box.innerHTML=STAGES.map((s,i)=>{
+    const cls=i<b.stage?'done':i===b.stage?'now':'future';
+    let when='';
+    if(i<=b.stage) when=`<input type="date" data-sd="${i}" value="${stageDate(b,i)||''}" aria-label="Początek etapu ${s.name}">`;
+    else { const e=stageEstimate(b,i); if(e) when=`<span class="est">ok. ${shortDate(e[0])}–${shortDate(e[1])}</span>`; }
+    const desc = i===b.stage ? `<div class="desc"><p class="time">${s.time}</p><p>${s.text}</p></div>` : '';
+    const list = notes[i].sort((x,y)=>x.d.localeCompare(y.d) || tsMs(x.ts)-tsMs(y.ts)).map(h=>{
+      const A=author(h), canDel=admin || (ME && h.uid===ME.uid);
+      return `<li class="note"><span class="nd">${shortDate(h.d)}</span><div>${esc(h.t)} <small>· ${esc(A.name)}</small></div>`+
+        (canDel?`<button class="x" data-h="${h.id}" aria-label="Usuń wpis">×</button>`:'<span></span>')+`</li>`;
+    }).join('');
+    const add = state.addAt===i
+      ? `<div class="addf"><input type="text" id="tlText" placeholder="Np. zmierzone 1060, zlane znad osadu" aria-label="Treść wpisu">
+           <div class="two"><input type="date" id="tlDate" aria-label="Data wpisu"><button class="btn small" data-save="${i}">Dodaj</button><button class="btn ghost small" data-cancel>Anuluj</button></div></div>`
+      : `<button class="addb" data-add="${i}">+ Dodaj wpis</button>`;
+    return `<li class="${cls}"><span class="dot"></span><div class="sh"><span class="sn">${s.name}</span>${when}</div>${desc}`+
+      (list?`<ul class="notes">${list}</ul>`:'')+add+`</li>`;
   }).join('');
-  $('stName').textContent=S.name; $('stTime').textContent=S.time; $('stText').textContent=S.text;
+  if(state.addAt!=null && $('tlText')){
+    // domyślna data: dziś przy bieżącym etapie, a przy innych początek etapu (albo ostatnia znana data przed nim)
+    const i=state.addAt, def = i===b.stage ? today() : (eff.slice(0,i+1).filter(Boolean).pop() || today());
+    $('tlText').value=keep?keep.t:''; $('tlDate').value=keep&&keep.d?keep.d:def;
+    if(!keep || keep.f==='tlText') $('tlText').focus(); else if(keep.f==='tlDate') $('tlDate').focus();
+  }
   const nx=$('next'); nx.disabled=b.stage>=STAGES.length-1; nx.textContent=nx.disabled?'Ostatni etap':'Kolejny etap';
   $('prev').disabled=b.stage===0;
 }
-function renderHistory(){
-  const box=$('hist'), b=active();
-  document.querySelectorAll('#hScope .chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.scope===state.scope));
-  const sy=selYear();
-  $('scopeAll').textContent = sy==='all' ? 'Wszystkie partie' : `Cały rocznik ${sy}`;
-  const inYear=h=>{ if(sy==='all') return true; const x=byId(h.batchId); return x ? x.year===sy : +h.d.slice(0,4)===sy; };
-  const items=HIST.filter(h=>state.scope==='all' ? inYear(h) : (b && h.batchId===b.id))
-    .sort((x,y)=>y.d.localeCompare(x.d) || tsMs(y.ts)-tsMs(x.ts));
-  if(!items.length){ box.innerHTML='<p class="empty">Brak wpisów. Dodaj pierwszy powyżej.</p>'; return; }
-  const admin=MYDOC&&MYDOC.role==='admin';
-  let html='', day=null;
-  items.forEach(h=>{
-    if(h.d!==day){ day=h.d; const dt=new Date(h.d+'T12:00'); html+=`<h3 class="day">${fmtDate(h.d)} · ${DAYS[dt.getDay()]}</h3>`; }
-    const t=h.ts&&h.ts.toDate ? h.ts.toDate() : null;
-    const hm=t && !h.imp && !h.au && isoOf(t)===h.d ? ` · ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}` : '';
-    const bb=byId(h.batchId);
-    const bn=state.scope==='all' ? ` · <span class="bn" style="--c:${bb?batchColor(bb):'var(--muted)'}"><i></i>${esc(bb?bb.name:h.bn)}</span>` : '';
-    const canDel = admin || h.uid===ME.uid;
-    const A=author(h);
-    html+=`<div class="he">${avatar(A.uid,A.name)}<div><div class="meta"><b>${esc(A.name)}</b>${hm}${bn}</div><div class="txt">${esc(h.t)}</div></div>`+
-      (canDel?`<button class="x" data-h="${h.id}" aria-label="Usuń wpis">×</button>`:'<span></span>')+`</div>`;
-  });
-  box.innerHTML=html;
-}
+function renderHistory(){ if(active() && state.mode==='ferm') renderStage(); }
 function caption(){
   if(state.mode==='ferm'){ const b=active(); $('vCap').textContent=b?`${b.name}: ${fmt(b.vol)} l z ${fmt(b.cap)} l, ${STAGES[b.stage].name.toLowerCase()}`:''; }
   else { const I=fusionInfo(); $('vCap').textContent = I ? `${I.t.name}: ${fmt(I.total)} l z ${fmt(I.t.cap)} l po zmieszaniu` : ''; }
@@ -1100,6 +1214,16 @@ function renderMe(){
   if(!MYDOC) return;
   $('meBtn').innerHTML=`${avatar(ME.uid)}${esc(MYDOC.name)}`;
 }
+
+// ---------- zdarzenia: dźwięk ----------
+$('sndOn').onchange=e=>SND.set({on:e.target.checked});
+$('sndBub').onchange=e=>SND.set({bub:e.target.checked});
+$('sndMonk').onchange=e=>SND.set({monk:e.target.checked});
+$('sndVol').oninput=e=>SND.set({vol:e.target.value/100});
+document.addEventListener('click',e=>{ if(!e.target.closest('#sndMenu')) $('sndMenu').open=false; });
+// przeglądarka pozwala grać dopiero po geście – jeśli dźwięk był włączony, rusza przy pierwszym kliknięciu
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>SND.resumeIfWanted(),{once:true}));
+SND.syncUI();
 
 // ---------- zdarzenia: partia ----------
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
@@ -1155,26 +1279,34 @@ $('next').onclick=()=>{ const b=active(); if(b.stage<STAGES.length-1){ b.stage++
   save(b); log(b,`Etap: ${STAGES[b.stage].name}`); refresh(); renderHints(); } };
 $('prev').onclick=()=>{ const b=active(); if(b.stage>0){ const sd=Object.assign({},b.stageDates); delete sd[b.stage]; b.stageDates=sd; b.stage--;
   save(b); log(b,`Cofnięto do etapu: ${STAGES[b.stage].name}`); refresh(); renderHints(); } };
-$('steps').addEventListener('change',e=>{
+$('tl').addEventListener('change',e=>{
   const i=e.target.dataset&&e.target.dataset.sd; if(i==null) return;
   const b=active(), v=e.target.value; if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
   b.stageDates=Object.assign({},b.stageDates,{[i]:v}); save(b);
   log(b,`Początek etapu „${STAGES[i].name}”: ${fmtDate(v)}`); refresh();
 });
-
-$('hAdd').onclick=()=>{
+function addNote(){
   const b=active(); if(!b) return;
-  const t=$('hText').value.trim(); if(!t){ $('hText').focus(); return; }
-  log(b,t,$('hDate').value||today()); $('hText').value=''; $('hDate').value=today();
-};
-$('hText').addEventListener('keydown',e=>{ if(e.key==='Enter') $('hAdd').click(); });
-$('hist').addEventListener('click',e=>{
-  const id=e.target.dataset&&e.target.dataset.h; if(!id) return;
-  const h=HIST.find(x=>x.id===id); if(!h) return;
-  if(!confirm(`Usunąć wpis „${h.t}”?`)) return;
-  db.collection('history').doc(id).delete().catch(err=>alert('Nie udało się usunąć: '+authMsg(err)));
+  const t=$('tlText').value.trim(); if(!t){ $('tlText').focus(); return; }
+  const d=/^\d{4}-\d{2}-\d{2}$/.test($('tlDate').value) ? $('tlDate').value : today();
+  db.collection('history').add(Object.assign(histDoc(b,t,d),{note:true})).catch(e=>alert('Nie udało się zapisać wpisu: '+authMsg(e)));
+  state.addAt=null; renderStage();
+}
+$('tl').addEventListener('click',e=>{
+  const ds=e.target.dataset||{};
+  if(ds.add!=null){ state.addAt=+ds.add; renderStage(); return; }
+  if(ds.cancel!=null){ state.addAt=null; renderStage(); return; }
+  if(ds.save!=null){ addNote(); return; }
+  if(ds.h){
+    const h=HIST.find(x=>x.id===ds.h); if(!h) return;
+    if(!confirm(`Usunąć wpis „${h.t}”?`)) return;
+    db.collection('history').doc(ds.h).delete().catch(err=>alert('Nie udało się usunąć: '+authMsg(err)));
+  }
 });
-document.querySelectorAll('#hScope .chip').forEach(c=>c.onclick=()=>{ state.scope=c.dataset.scope; renderHistory(); });
+$('tl').addEventListener('keydown',e=>{
+  if(e.key==='Enter' && (e.target.id==='tlText'||e.target.id==='tlDate')){ e.preventDefault(); addNote(); }
+  if(e.key==='Escape' && state.addAt!=null){ state.addAt=null; renderStage(); }
+});
 
 $('cloneBtn').onclick=async()=>{
   const b=active(); if(!b) return;
@@ -1255,56 +1387,6 @@ $('mix').onclick=()=>{
   },1800);
 };
 
-// ---------- eksport / import ----------
-$('exp').onclick=()=>{
-  const out={app:'butla',v:2,exported:new Date().toISOString(),
-    batches:BATCHES.map(b=>Object.assign({id:b.id},batchData(b),{
-      history:HIST.filter(h=>h.batchId===b.id).map(h=>({d:h.d,t:h.t,ts:tsMs(h.ts)||null,an:author(h).name}))}))};
-  const orphans=HIST.filter(h=>!byId(h.batchId));
-  if(orphans.length) out.orphanHistory=orphans.map(h=>({batchId:h.batchId,bn:h.bn,d:h.d,t:h.t,ts:tsMs(h.ts)||null,an:author(h).name}));
-  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`butla-${today()}.json`;
-  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
-};
-$('impBtn').onclick=$('esImp').onclick=()=>$('imp').click();
-$('imp').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=async()=>{
-    e.target.value='';
-    let d; try{ d=JSON.parse(r.result); }catch(err){ alert('To nie jest plik JSON.'); return; }
-    const src = Array.isArray(d) ? d : (d && (d.batches||d.partie||(d.data&&d.data.batches)));
-    if(!Array.isArray(src)||!src.length){ alert('Ten plik nie wygląda na eksport z Butli.'); return; }
-    const topHist = Array.isArray(d.history) ? d.history : [];
-    const plan=src.map(o=>{
-      const id=String(o.id||db.collection('batches').doc().id).replace(/\//g,'_');
-      const b=normBatch(Object.assign({},o,{id}));
-      const hs=[...(Array.isArray(o.history)?o.history:[]), ...topHist.filter(h=>h.batchId===o.id)]
-        .filter(h=>h&&(h.t||h.text)).map(h=>({d:/^\d{4}-\d{2}-\d{2}$/.test(h.d||h.date||'')?(h.d||h.date):today(), t:String(h.t||h.text), ts:h.ts, an:h.an||h.author||null}));
-      if(o.year==null && o.rocznik==null && hs.length) b.year=Math.min(...hs.map(h=>+h.d.slice(0,4)));
-      return {b,hs};
-    });
-    const nh=plan.reduce((s,p)=>s+p.hs.length,0);
-    const clash=plan.filter(p=>byId(p.b.id)).length;
-    if(!confirm(`Zaimportować ${plan.length} partii i ${nh} wpisów historii?`+(clash?`\n${clash} partii o tych samych identyfikatorach zostanie nadpisanych.`:''))) return;
-    try{
-      const ops=[];
-      plan.forEach(({b,hs})=>{
-        ops.push(wb=>wb.set(db.collection('batches').doc(b.id),Object.assign(batchData(b),{createdAt:FV().serverTimestamp(),createdBy:ME.uid,updatedAt:FV().serverTimestamp(),updatedBy:ME.uid})));
-        hs.forEach(h=>{
-          const ms = typeof h.ts==='number' && h.ts>0 ? h.ts : new Date(h.d+'T12:00').getTime();
-          const doc={batchId:b.id,bn:b.name,d:h.d,t:h.t,ts:firebase.firestore.Timestamp.fromMillis(ms),uid:ME.uid,imp:true};
-          if(h.an) doc.an=String(h.an);
-          ops.push(wb=>wb.set(db.collection('history').doc(),doc));
-        });
-      });
-      for(let i=0;i<ops.length;i+=400){ const wb=db.batch(); ops.slice(i,i+400).forEach(fn=>fn(wb)); await wb.commit(); }
-      setActive(plan[0].b.id); setYear(plan[0].b.year);
-      alert(`Zaimportowano ${plan.length} partii i ${nh} wpisów.`);
-    }catch(err){ alert('Import nie powiódł się: '+authMsg(err)); }
-  };
-  r.readAsText(f);
-});
 $('esSeed').onclick=async()=>{
   const items=[
     {b:{year:2026,name:'Weronika',fruit:'ciemne',cap:30,vol:18,yeast:'uni',yeastG:5,stage:2,pulpaL:0,sugarKg:0,waterL:0},

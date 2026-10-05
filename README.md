@@ -1,7 +1,7 @@
 # Butla – dziennik winiarski
 
 Jednoplikowa aplikacja (`index.html`, bez frameworka) do prowadzenia partii wina:
-roczniki, dane nastawu, etapy fermentacji, fuzje, historia zmian z autorem.
+roczniki, dane nastawu, oś czasu etapów z notatkami, fuzje, dźwięk bąbelków i mnichów.
 Dane trzyma Firebase (Auth + Firestore, projekt `butla-91912`, baza `eur3`), strona stoi na GitHub Pages: `https://guldorf.github.io/butla/`.
 
 ## Dane w Firestore
@@ -10,7 +10,7 @@ Dane trzyma Firebase (Auth + Firestore, projekt `butla-91912`, baza `eur3`), str
 |---|---|
 | `users/{uid}` | `login`, `name`, `role` (`admin`/`user`), `color` |
 | `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast` (lista rodzajów: `malaga`, `sherry`, `uni`; starsze dane mają jeden napis), `yeastG` (razem), `nutG`, `pulpaL`, `sugarKg` (cukier I partia), `sugarKg2` (cukier II partia), `waterL`, `stage`, `stageDates` (`{nr etapu: RRRR-MM-DD}`), `col` (kolumna 0–4), `order` (pozycja w kolumnie), `color`, `clonedFrom` |
-| `history/{id}` | `batchId`, `bn` (nazwa partii), `d` (data `RRRR-MM-DD`), `t` (treść), `ts`, `uid` (kto zapisał), opcjonalnie `au`/`an` (pierwotny autor przy kopiach i imporcie), `imp` |
+| `history/{id}` | `batchId`, `bn` (nazwa partii), `d` (data `RRRR-MM-DD`), `t` (treść), `ts`, `uid` (kto zapisał), opcjonalnie `au`/`an` (pierwotny autor przy kopiach i dawnym imporcie), `imp`, `note` (notatka dodana na osi czasu). Wpisy automatyczne (zmiany pól i etapów) zostają w bazie, ale oś czasu ich nie pokazuje |
 | `meta/setup` | `adminUid` – znacznik, że konto administratora już istnieje |
 
 Login zamieniany jest na adres `login@butla.app` (to tylko identyfikator w Firebase, poczta nie istnieje).
@@ -37,7 +37,6 @@ Login zamieniany jest na adres `login@butla.app` (to tylko identyfikator w Fireb
    Hasło każdy może potem zmienić sam w tym samym oknie.
 3. **Odbierz dostęp** usuwa dokument `users/{uid}` – konto w Authentication zostaje, ale nie ma już wstępu.
    Jeśli chcesz je skasować całkiem: Firebase → Authentication → Users.
-4. **Importuj dane** przyjmuje eksport z wersji claude.ai, ze starszej wersji (localStorage) i z tej wersji.
 
 ## GitHub Pages
 
@@ -51,3 +50,8 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
   Wynik jest ograniczony tolerancją drożdży (Malaga ok. 16%, Sherry ok. 17%, uniwersalne ok. 14%), nadmiar cukru zostaje jako słodycz.
 - **Czyste wino** – woda + rozpuszczony cukier + sok z pulpy (60–70% jej objętości), minus ok. 10% na osad.
 - **Etapy** – burzliwa 5–10 dni, cicha 3–6 tygodni, dojrzewanie 3–12 miesięcy; daty kolejnych etapów liczone od ostatniej znanej daty.
+
+## Oś czasu i dźwięk
+
+- **Etap** (prawa kolumna) to oś czasu: nastaw, burzliwa, cicha, dojrzewanie. Przy każdym etapie jest data jego początku, a przy przyszłych – szacunek. Pod etapem stoją notatki z jego okresu, przypisane po dacie. „+ Dodaj wpis” dopisuje notatkę między etapami.
+- **Dźwięk** (menu w nagłówku) jest syntezowany w przeglądarce (Web Audio, bez plików): bulknięcie przy każdym bąblu w rurce, drobne bąbelki w winie zsynchronizowane z animacją oraz mruczenie mnichów – chorał w skali doryckiej z bordunem i pogłosem. Ustawienia zapamiętują się w przeglądarce; przeglądarka pozwala zagrać dopiero po pierwszym kliknięciu na stronie.
