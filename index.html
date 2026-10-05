@@ -59,6 +59,8 @@ input[type=text],input[type=number],input[type=date],input[type=password],select
 input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(103,180,55,.2)}
 .btn.ghost:hover,.chip:hover,.stepper button:hover{border-color:var(--accent)}
 .ulist li{border-bottom-color:var(--accent-soft)}
+.vessel .alarm{margin:0 4px 6px}
+.vessel.fu .alarm{display:none}
 .alarm{margin:14px 0 0;padding:10px 14px;border-radius:10px;font-size:14px;border:1px solid var(--line);background:var(--surface)}
 .alarm.bad{background:var(--alarm-bg);color:var(--warn);border-color:var(--warn);font-weight:600}
 .alarm.warn{color:var(--warn)}
@@ -389,8 +391,7 @@ dialog h3{font-size:17px;margin:18px 0 8px}
                   <div class="hint" id="nHint"></div>
                 </div>
                 <div class="field full"><span class="lab">Proporcje nastawu</span><div id="propHint"></div><div class="hint" id="propHint2"></div>
-                  <ul class="est-list" id="estList"></ul>
-                  <p class="alarm hidden" id="riseAlarm" role="status"></p></div>
+                  <ul class="est-list" id="estList"></ul></div>
               </div>
             </div>
 
@@ -427,7 +428,8 @@ dialog h3{font-size:17px;margin:18px 0 8px}
           </section>
         </div>
 
-        <div class="vessel">
+        <div class="vessel" id="vessel">
+          <p class="alarm hidden" id="riseAlarm" role="status"></p>
           <svg viewBox="0 0 440 480" role="img" aria-label="Naczynie z warstwami wina i rurką fermentacyjną">
             <defs>
               <clipPath id="bottleClip"><path id="bottleShapeClip"/></clipPath>
@@ -1296,6 +1298,7 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
   $('pFerm').classList.toggle('hidden',state.mode!=='ferm');
   $('pFusion').classList.toggle('hidden',state.mode!=='fusion');
+  $('vessel').classList.toggle('fu',state.mode==='fusion');   // alarm wykipienia dotyczy partii, nie fuzji
   if(state.mode==='fusion'){ FU.target=(active()||{}).id; FU.add={}; FU.phase='idle'; }
   refresh();
 }));
