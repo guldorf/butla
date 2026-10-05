@@ -396,7 +396,8 @@ dialog h3{font-size:17px;margin:18px 0 8px}
 
             <div class="block">
               <h2>Klonowanie</h2>
-              <p class="hint" style="margin:0 0 10px">Ten sam nastaw w kilku butelkach: kopie dostają te same dane i historię, a dalej prowadzisz je osobno.</p>
+              <p class="hint" style="margin:0 0 10px">Ten sam nastaw w kilku butelkach: kopie dostają te same dane i historię. Zmiany w oryginale (dane, drożdże, etapy, notatki) przechodzą na klony; usunięcie i fuzja dotyczą tylko jednej partii.</p>
+              <p class="hint" id="cloneInfo" style="margin:0 0 10px"></p>
               <div class="clone">
                 <label for="cloneN">Liczba kopii</label>
                 <div class="stepper"><button type="button" data-step="cloneN:-1" aria-label="Mniej kopii">−</button>
@@ -663,10 +664,18 @@ function setYear(y){ try{ localStorage.setItem('butla.year',String(y)); }catch(e
 const visible = () => { const y=selYear(); return y==='all' ? BATCHES : BATCHES.filter(b=>b.year===y); };
 const active = () => { const v=visible(), a=byId(activeId()); return (a&&v.includes(a)) ? a : (v[0]||null); };
 
-const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','sugarKg2','waterL','stage','color','order','col','stageDates'];
+const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','sugarKg2','waterL','stage','color','order','col','stageDates','clonedFrom'];
+// pola, które oryginał przekazuje klonom (nazwa, miejsce i kolor zostają własne; fuzja i usuwanie zapisują osobno)
+const SYNC_FIELDS=['year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','sugarKg2','waterL','stage','stageDates'];
+// klony oryginału (także klony klonów); klon sam niczego dalej nie przekazuje
+function clonesOf(b){
+  if(!b || b.clonedFrom) return [];
+  const out=[], walk=id=>BATCHES.forEach(c=>{ if(c.clonedFrom===id && !out.includes(c)){ out.push(c); walk(c.id); } });
+  walk(b.id); return out;
+}
 function mk(o){
   return Object.assign({name:'Nowa partia',year:new Date().getFullYear(),fruit:'ciemne',cap:5,vol:4.5,yeast:['uni'],yeastG:5,nutG:0,
-    pulpaL:2,sugarKg:1,sugarKg2:0,waterL:2,stage:0,color:null},o);
+    pulpaL:2,sugarKg:1,sugarKg2:0,waterL:2,stage:0,color:null,clonedFrom:null},o);
 }
 // przyjmuje partię z bazy albo z eksportu (także starszego, z proporcjami w %)
 function normBatch(o){
@@ -695,6 +704,7 @@ function normBatch(o){
   if(!FRUITS[out.fruit]) out.fruit='inne';
   out.yeast=yeastList(out.yeast);
   out.name=String(out.name||'Bez nazwy');
+  out.clonedFrom = typeof out.clonedFrom==='string' && out.clonedFrom ? out.clonedFrom : null;
   { const y=parseInt(b.year!=null?b.year:(b.rocznik!=null?b.rocznik:''),10);
     out.year = y>=1990&&y<=2100 ? y : (tsMs(o.createdAt) ? new Date(tsMs(o.createdAt)).getFullYear() : new Date().getFullYear()); }
   out.id=o.id; out.createdAt=o.createdAt||null;
@@ -704,7 +714,17 @@ function batchData(b){ const d={}; BATCH_FIELDS.forEach(k=>d[k]=b[k]===undefined
 
 // ---------- zapis ----------
 const saveT={};
+const copyVal = v => Array.isArray(v) ? v.slice() : (v && typeof v==='object' ? Object.assign({},v) : v);
+// zapis partii; zmiany oryginału przechodzą od razu na jego klony
 function save(b){
+  clonesOf(b).forEach(c=>{
+    let ch=false;
+    SYNC_FIELDS.forEach(k=>{ if(JSON.stringify(c[k])!==JSON.stringify(b[k])){ c[k]=copyVal(b[k]); ch=true; } });
+    if(ch) saveOne(c);
+  });
+  saveOne(b);
+}
+function saveOne(b){
   clearTimeout(saveT[b.id]);
   saveT[b.id]=setTimeout(()=>{
     delete saveT[b.id];
@@ -1089,6 +1109,9 @@ function renderForm(){
   setv('fPulpa',b.pulpaL); setv('fSugar',b.sugarKg); setv('fSugar2',b.sugarKg2); setv('fWater',b.waterL);
   renderYeast(); renderHints();
   $('del').disabled=!BATCHES.length;
+  { const par=b.clonedFrom&&byId(b.clonedFrom), kids=clonesOf(b);
+    $('cloneInfo').innerHTML = b.clonedFrom ? `To klon partii <b>${esc(par?par.name:'(usunięta)')}</b> – jej zmiany przechodzą tutaj.`
+      : kids.length ? `Zmiany w tej partii przechodzą na klony: <b>${kids.map(c=>esc(c.name)).join(', ')}</b>.` : ''; }
 }
 function renderYeast(){
   const b=active(), box=$('yeastChips'); box.innerHTML='';
@@ -1326,12 +1349,19 @@ $('tl').addEventListener('change',e=>{
   const nd=e.target.dataset&&e.target.dataset.nd;
   if(nd){
     const h=HIST.find(x=>x.id===nd), v=e.target.value; if(!h || !/^\d{4}-\d{2}-\d{2}$/.test(v) || v===h.d) return;
-    const A=author(h), doc={}; for(const k in h) if(!['id','ts','uid','d'].includes(k)) doc[k]=h[k];
-    Object.assign(doc,{d:v,ts:FV().serverTimestamp(),uid:ME.uid});
-    if(h.uid!==ME.uid && !h.au){ if(h.uid) doc.au=h.uid; doc.an=A.name; }
-    const ref=db.collection('history').doc(), wb=db.batch();
-    wb.delete(db.collection('history').doc(h.id)); wb.set(ref,doc);
-    if(state.openNotes.delete(h.id)) state.openNotes.add(ref.id);
+    const wb=db.batch();
+    const move=(x,src)=>{
+      const A=author(x), doc={}; for(const k in x) if(!['id','ts','uid','d'].includes(k)) doc[k]=x[k];
+      Object.assign(doc,{d:v,ts:FV().serverTimestamp(),uid:ME.uid}); if(src) doc.src=src;
+      if(x.uid!==ME.uid && !x.au){ if(x.uid) doc.au=x.uid; doc.an=A.name; }
+      const ref=db.collection('history').doc();
+      wb.delete(db.collection('history').doc(x.id)); wb.set(ref,doc);
+      if(state.openNotes.delete(x.id)) state.openNotes.add(ref.id);
+      return ref.id;
+    };
+    const nid=move(h);
+    // notatka oryginału: jej kopie w klonach też dostają nową datę
+    if(!(byId(h.batchId)||{}).clonedFrom) HIST.filter(x=>x.src===h.id).forEach(x=>move(x,nid));
     wb.commit().catch(err=>alert('Nie udało się zmienić daty: '+authMsg(err)));
     return;
   }
@@ -1344,7 +1374,11 @@ function addNote(){
   const b=active(); if(!b) return;
   const t=$('tlText').value.trim(); if(!t){ $('tlText').focus(); return; }
   const d=/^\d{4}-\d{2}-\d{2}$/.test($('tlDate').value) ? $('tlDate').value : today();
-  db.collection('history').add(Object.assign(histDoc(b,t,d),{note:true})).catch(e=>alert('Nie udało się zapisać wpisu: '+authMsg(e)));
+  // notatka w oryginale trafia też do jego klonów (src = wpis źródłowy, żeby zmiana daty poszła za nią)
+  const H=db.collection('history'), ref=H.doc(), wb=db.batch();
+  wb.set(ref,Object.assign(histDoc(b,t,d),{note:true}));
+  clonesOf(b).forEach(c=>wb.set(H.doc(),Object.assign(histDoc(c,t,d),{note:true,src:ref.id})));
+  wb.commit().catch(e=>alert('Nie udało się zapisać wpisu: '+authMsg(e)));
   state.addAt=null; renderStage();
 }
 $('tl').addEventListener('click',e=>{
