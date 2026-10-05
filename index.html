@@ -81,18 +81,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .sndp label{display:flex;align-items:center;gap:8px;cursor:pointer}
 .sndp input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 .sndp .vol{display:grid;gap:2px;color:var(--muted)}
-.sndp .rate{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding-left:24px;color:var(--muted)}
-.sndp .rate label{gap:4px;color:var(--ink)}
-.sndp input[type=radio]{accent-color:var(--accent)}
-/* odtwarzacz YouTube – musi być widoczny, min. 200×200 px */
-.ytcard{position:fixed;right:16px;bottom:16px;z-index:30;width:260px;background:var(--surface);border:1.5px solid var(--accent-soft);
-  border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px 8px 8px;font-size:13px}
-.yth{display:flex;align-items:center;justify-content:space-between;gap:6px;color:var(--muted);padding:0 0 6px 2px}
-.yth a{color:inherit}
-.yth .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px}
-.ytbox{width:100%;height:200px;border-radius:8px;overflow:hidden;background:#000}
-.ytbox iframe{display:block;width:100%;height:100%;border:0}
-@media (max-width:480px){.ytcard{left:16px;right:16px;width:auto}}
 .batches{margin:12px 0 4px}
 .bgrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;padding-bottom:4px}
 .bcol{display:flex;flex-direction:column;gap:6px;min-height:40px;border-radius:12px;padding:3px;transition:background .15s}
@@ -307,11 +295,6 @@ dialog h3{font-size:17px;margin:18px 0 8px}
         <div class="sndp">
           <label><input type="checkbox" id="sndOn"> Włączony</label>
           <label><input type="checkbox" id="sndBub"> Bąbelki wina</label>
-          <label><input type="checkbox" id="sndMonk"> Mnisi (podkład z YouTube)</label>
-          <div class="rate" role="radiogroup" aria-label="Tempo mnichów"><span>Tempo</span>
-            <label><input type="radio" name="sndRate" value="1"> 1×</label>
-            <label><input type="radio" name="sndRate" value="0.75"> 0,75×</label>
-            <label><input type="radio" name="sndRate" value="0.5"> 0,5×</label></div>
           <label class="vol">Głośność <input type="range" id="sndVol" min="0" max="100" step="5"></label>
         </div>
       </details>
@@ -463,13 +446,6 @@ dialog h3{font-size:17px;margin:18px 0 8px}
       </div>
     </aside>
   </div>
-</div>
-
-<!-- ===== podkład: mnisi z YouTube ===== -->
-<div class="ytcard hidden" id="ytCard" role="region" aria-label="Podkład muzyczny">
-  <div class="yth"><span>Mnisi z Tashilhunpo · <a href="https://www.youtube.com/watch?v=LksBIDL6E2U" target="_blank" rel="noopener">Mantraon</a></span>
-    <button type="button" class="x" id="ytClose" aria-label="Wyłącz mnichów">×</button></div>
-  <div class="ytbox"><div id="ytPlayer"></div></div>
 </div>
 
 <!-- ===== konto i użytkownicy ===== -->
@@ -883,15 +859,12 @@ function render(dt){
 let last=performance.now(), looping=false;
 function loop(now){ const dt=Math.min(.05,(now-last)/1000); last=now; step(dt); render(dt); requestAnimationFrame(loop); }
 
-// ---------- dźwięk: bąbelki (Web Audio) i mnisi jako podkład z YouTube ----------
-// Mnisi: „Tibetan Monks – Tashilhunpo Monastery Chant” (kanał Mantraon), osadzony oficjalnym odtwarzaczem.
-// Zasady YouTube wymagają widocznego odtwarzacza (min. 200×200 px), więc w czasie grania stoi w rogu strony.
-const YT_ID='LksBIDL6E2U';
+// ---------- dźwięk: bulkanie rurki i bąbelki w winie (Web Audio, bez plików) ----------
 const SND=(()=>{
-  const S={on:false,bub:true,monk:true,vol:.6,rate:1};   // rate: tempo mnichów (YouTube zachowuje wysokość głosu)
+  const S={on:false,bub:true,vol:.6};
   try{ Object.assign(S,JSON.parse(localStorage.getItem('butla.snd')||'{}')); }catch(e){}
   const keep=()=>{ try{ localStorage.setItem('butla.snd',JSON.stringify(S)); }catch(e){} };
-  let A=null, offT=null, yt=null, ytReady=false, ytLoading=false;
+  let A=null, offT=null;
   function impulse(ctx,sec,decay){
     const n=Math.round(ctx.sampleRate*sec), buf=ctx.createBuffer(2,n,ctx.sampleRate);
     for(let c=0;c<2;c++){ const d=buf.getChannelData(c); for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,decay); }
@@ -915,31 +888,7 @@ const SND=(()=>{
     const tick=()=>{ const t=ctx.currentTime+.01+Math.random()*.04, f=900+Math.random()*1800; bloop(t,f,f*1.7,.018,.08+Math.random()*.12); };
     return {ctx,master,bubG,blub,tick};
   }
-  // ----- YouTube -----
-  function loadYT(){
-    if(ytLoading) return; ytLoading=true;
-    const prev=window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady=()=>{ if(prev) prev();
-      yt=new YT.Player('ytPlayer',{videoId:YT_ID,width:'100%',height:'100%',
-        playerVars:{autoplay:1,loop:1,playlist:YT_ID,rel:0,playsinline:1,modestbranding:1},
-        events:{onReady:()=>{ ytReady=true; applyYT(); },
-          // po zapętleniu YouTube potrafi wrócić do 1× – przywracamy wybrane tempo
-          onStateChange:e=>{ if(e.data===YT.PlayerState.PLAYING && yt.getPlaybackRate()!==S.rate) yt.setPlaybackRate(S.rate); }}});
-    };
-    const s=document.createElement('script'); s.src='https://www.youtube.com/iframe_api'; document.head.appendChild(s);
-  }
-  function applyYT(){
-    const want=S.on&&S.monk;
-    $('ytCard').classList.toggle('hidden',!want);
-    if(want && !yt) loadYT();
-    if(!ytReady) return;
-    yt.setVolume(Math.round(S.vol*100));
-    if(yt.getPlaybackRate()!==S.rate) yt.setPlaybackRate(S.rate);
-    if(want){ if(yt.getPlayerState()!==YT.PlayerState.PLAYING) yt.playVideo(); }
-    else yt.pauseVideo();
-  }
   function apply(){
-    applyYT();
     if(!A) return; const t=A.ctx.currentTime;
     A.master.gain.setTargetAtTime(S.on?S.vol*.9:0,t,.25);
     A.bubG.gain.setTargetAtTime(S.bub?1:0,t,.2);
@@ -955,8 +904,7 @@ const SND=(()=>{
   function syncUI(){
     const m=$('sndMenu'); if(!m) return;
     m.classList.toggle('on',S.on);
-    $('sndOn').checked=S.on; $('sndBub').checked=S.bub; $('sndMonk').checked=S.monk; $('sndVol').value=Math.round(S.vol*100);
-    document.querySelectorAll('input[name=sndRate]').forEach(r=>r.checked=+r.value===S.rate);
+    $('sndOn').checked=S.on; $('sndBub').checked=S.bub; $('sndVol').value=Math.round(S.vol*100);
   }
   return {
     S, set, syncUI, build,
@@ -1235,10 +1183,7 @@ function renderMe(){
 // ---------- zdarzenia: dźwięk ----------
 $('sndOn').onchange=e=>SND.set({on:e.target.checked});
 $('sndBub').onchange=e=>SND.set({bub:e.target.checked});
-$('sndMonk').onchange=e=>SND.set({monk:e.target.checked});
 $('sndVol').oninput=e=>SND.set({vol:e.target.value/100});
-$('ytClose').onclick=()=>SND.set({monk:false});
-document.querySelectorAll('input[name=sndRate]').forEach(r=>r.onchange=()=>SND.set({rate:+r.value}));
 document.addEventListener('click',e=>{ if(!e.target.closest('#sndMenu')) $('sndMenu').open=false; });
 // przeglądarka pozwala grać dopiero po geście – jeśli dźwięk był włączony, rusza przy pierwszym kliknięciu
 ['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>SND.resumeIfWanted(),{once:true}));
