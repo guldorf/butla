@@ -63,13 +63,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .est-list{margin:8px 0 0;padding:0;list-style:none;font-size:14px;display:grid;gap:3px}
 .est-list b{font-weight:600}
 .chip.dragging{opacity:.9;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:5;position:relative;cursor:grabbing}
-#batches .chip:not(.add){touch-action:pan-y;user-select:none;-webkit-user-select:none}
+#batches .chip:not(.add){touch-action:manipulation;user-select:none;-webkit-user-select:none}
 header p{margin:4px 0 0;color:var(--muted);max-width:56ch}
 .io{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.batches{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:12px 0 4px;max-width:420px}
-.batches .chip{justify-content:flex-start;padding:7px 14px 7px 10px}
-.batches .chip small{margin-left:auto;padding-left:12px;font-variant-numeric:tabular-nums}
-.batches .chip.add{justify-content:center}
+.batches{margin:12px 0 4px}
+.bgrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;padding-bottom:4px}
+.bcol{display:flex;flex-direction:column;gap:6px;min-height:40px;border-radius:12px;padding:3px;transition:background .15s}
+.batches.drag-on .bcol{outline:1.5px dashed var(--accent-soft)}
+.batches.drag-on .bcol.target{background:rgba(103,180,55,.12);outline-color:var(--accent)}
+.batches .chip{justify-content:flex-start;padding:7px 12px 7px 10px;min-width:0;border-radius:14px}
+.batches .chip .nm{min-width:0;line-height:1.25;overflow-wrap:anywhere;text-align:left}
+.batches .chip small{margin-left:auto;padding-left:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.batches .chip.add{justify-content:center;margin-top:8px}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 15px 8px 10px;border-radius:999px;
   border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
 .chip .sw{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
@@ -584,6 +589,21 @@ const activeId = () => { try{ return localStorage.getItem('butla.active'); }catc
 function setActive(id){ try{ localStorage.setItem('butla.active',id); }catch(e){} }
 const byId = id => BATCHES.find(b=>b.id===id);
 // kolejność: ręczna (order, nadawana przy przeciąganiu), nowe partie bez order na końcu wg daty utworzenia
+const COLS=5;
+const baseName=n=>String(n).replace(/\s+#\d+$/,'');
+const validCol=c=>Number.isInteger(c)&&c>=0&&c<COLS;
+// rozkład widocznych partii na kolumny: zapisana kolumna, a bez niej – kolumna „rodziny” (te same nazwy z #n) albo najkrótsza
+function layout(list){
+  const cols=Array.from({length:COLS},()=>[]), fam={};
+  const sorted=[...list].sort(batchCmp);
+  sorted.filter(b=>validCol(b.col)).forEach(b=>{ cols[b.col].push(b); fam[baseName(b.name)]??=b.col; });
+  sorted.filter(b=>!validCol(b.col)).forEach(b=>{
+    let c=fam[baseName(b.name)];
+    if(c==null){ c=0; for(let i=1;i<COLS;i++) if(cols[i].length<cols[c].length) c=i; fam[baseName(b.name)]=c; }
+    cols[c].push(b);
+  });
+  return cols;
+}
 const batchCmp=(a,b)=>((a.order??1e9)-(b.order??1e9)) || tsMs(a.createdAt)-tsMs(b.createdAt) || a.name.localeCompare(b.name,'pl');
 const yearsList = () => [...new Set(BATCHES.map(b=>b.year))].sort((a,b)=>b-a);
 function selYear(){
@@ -597,7 +617,7 @@ function setYear(y){ try{ localStorage.setItem('butla.year',String(y)); }catch(e
 const visible = () => { const y=selYear(); return y==='all' ? BATCHES : BATCHES.filter(b=>b.year===y); };
 const active = () => { const v=visible(), a=byId(activeId()); return (a&&v.includes(a)) ? a : (v[0]||null); };
 
-const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','waterL','stage','color','order','stageDates'];
+const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','waterL','stage','color','order','col','stageDates'];
 function mk(o){
   return Object.assign({name:'Nowa partia',year:new Date().getFullYear(),fruit:'ciemne',cap:5,vol:4.5,yeast:'uni',yeastG:5,nutG:0,
     pulpaL:2,sugarKg:1,waterL:2,stage:0,color:null},o);
@@ -625,6 +645,7 @@ function normBatch(o){
     for(const k in src) if(/^[0-3]$/.test(k) && /^\d{4}-\d{2}-\d{2}$/.test(src[k])) sd[k]=src[k];
     out.stageDates=sd; }
   out.order = typeof out.order==='number' && isFinite(out.order) ? out.order : null;
+  out.col = validCol(out.col) ? out.col : null;
   if(!FRUITS[out.fruit]) out.fruit='inne';
   if(!YEASTS[out.yeast]) out.yeast='uni';
   out.name=String(out.name||'Bez nazwy');
@@ -831,65 +852,74 @@ function renderBatches(){
   renderYears();
   const box=$('batches'); box.innerHTML='';
   const a=active(), sy=selYear();
-  visible().forEach(b=>box.appendChild(chip(`${esc(b.name)} <small>${sy==='all'?b.year+' · ':''}${fmt(b.vol)}/${fmt(b.cap)} l</small>`,batchColor(b),a&&b.id===a.id,()=>{
-    setActive(b.id); renderAll();
-  })));
-  box.querySelectorAll('.chip').forEach((c,i)=>{ c.dataset.id=visible()[i].id; c.title='Przeciągnij, żeby zmienić kolejność'; });
+  const grid=document.createElement('div'); grid.className='bgrid';
+  layout(visible()).forEach((list,ci)=>{
+    const col=document.createElement('div'); col.className='bcol'; col.dataset.col=ci;
+    list.forEach(b=>{
+      const c=chip(`<span class="nm">${esc(b.name)}</span><small>${sy==='all'?b.year+' · ':''}${fmt(b.vol)}/${fmt(b.cap)} l</small>`,batchColor(b),a&&b.id===a.id,()=>{ setActive(b.id); renderAll(); });
+      c.dataset.id=b.id; c.title=`${b.name} – przeciągnij, żeby przenieść`; col.appendChild(c);
+    });
+    grid.appendChild(col);
+  });
+  if(BATCHES.length) box.appendChild(grid);
   if(BATCHES.length) box.appendChild(chip('+ Nowa partia',null,null,newBatch,'add'));
   const none=!BATCHES.length;
   $('emptyState').classList.toggle('hidden',!none);
   $('main').classList.toggle('hidden',none);
 }
-// przeciąganie partii: myszą od razu, palcem po przytrzymaniu
+// przeciąganie partii między kolumnami i w pionie: myszą od razu, palcem po przytrzymaniu
 (function(){
   const box=$('batches'); let D=null, justDragged=0;
   // po upuszczeniu nie przełączaj partii kliknięciem
   box.addEventListener('click',ev=>{ if(Date.now()-justDragged<400){ ev.stopPropagation(); ev.preventDefault(); } },true);
-  const chips=()=>[...box.querySelectorAll('.chip:not(.add)')];
+  const cols=()=>[...box.querySelectorAll('.bcol')];
+  const clear=()=>{ box.querySelectorAll('.chip').forEach(o=>{ o.style.boxShadow=''; o.style.transform=''; }); cols().forEach(c=>c.classList.remove('target')); box.classList.remove('drag-on'); };
   box.addEventListener('pointerdown',e=>{
-    const c=e.target.closest('.chip:not(.add)'); if(!c||e.button>0) return;
+    const c=e.target.closest('.bcol .chip'); if(!c||e.button>0) return;
     D={c,x:e.clientX,y:e.clientY,on:false,id:e.pointerId,touch:e.pointerType!=='mouse',t:null};
     if(D.touch) D.t=setTimeout(()=>{ if(D) start(); },350);
   });
-  function start(){ D.on=true; D.c.classList.add('dragging'); try{ D.c.setPointerCapture(D.id); }catch(e){} if(navigator.vibrate) navigator.vibrate(15); }
+  function start(){ D.on=true; D.c.classList.add('dragging'); box.classList.add('drag-on'); try{ D.c.setPointerCapture(D.id); }catch(e){} if(navigator.vibrate) navigator.vibrate(15); }
   box.addEventListener('pointermove',e=>{
     if(!D) return;
     const dx=e.clientX-D.x, dy=e.clientY-D.y;
     if(!D.on){ if(D.touch){ if(Math.hypot(dx,dy)>10){ clearTimeout(D.t); D=null; } return; } if(Math.hypot(dx,dy)>6) start(); else return; }
     e.preventDefault();
-    D.c.style.transform=`translateY(${dy}px)`;
-    // miejsce docelowe: chip pod palcem
-    const others=chips().filter(x=>x!==D.c);
+    D.c.style.transform=`translate(${dx}px,${dy}px)`;
+    // kolumna pod kursorem (albo najbliższa), w niej miejsce wg wysokości
+    let col=null, best=1e9;
+    cols().forEach(c=>{ const r=c.getBoundingClientRect(); const d=e.clientX<r.left?r.left-e.clientX:e.clientX>r.right?e.clientX-r.right:0; if(d<best){ best=d; col=c; } });
+    cols().forEach(c=>c.classList.toggle('target',c===col));
     let before=null;
-    for(const o of others){ const r=o.getBoundingClientRect();
-      if(e.clientY<r.top+r.height/2){ before=o; break; } }
-    others.forEach(o=>o.style.boxShadow='');
-    if(before) before.style.boxShadow='0 -3px 0 0 var(--accent)'; D.before=before||'end';
+    for(const o of col.querySelectorAll('.chip')){ if(o===D.c) continue; const r=o.getBoundingClientRect(); if(e.clientY<r.top+r.height/2){ before=o; break; } }
+    box.querySelectorAll('.bcol .chip').forEach(o=>{ if(o!==D.c) o.style.boxShadow=''; });
+    if(before) before.style.boxShadow='0 -3px 0 0 var(--accent)';
+    D.col=+col.dataset.col; D.before=before;
   },{passive:false});
   box.addEventListener('touchmove',e=>{ if(D&&D.on) e.preventDefault(); },{passive:false});
   function end(){
     if(!D) return; clearTimeout(D.t);
     const d=D; D=null;
     if(!d.on) return;
-    chips().forEach(o=>{ o.style.boxShadow=''; o.style.transform=''; });
-    d.c.classList.remove('dragging');
+    clear(); d.c.classList.remove('dragging');
     justDragged=Date.now();
-    const ids=chips().map(x=>x.dataset.id).filter(id=>id!==d.c.dataset.id);
-    let at=d.before==='end'||!d.before ? ids.length : ids.indexOf(d.before.dataset.id); if(at<0) at=ids.length;
-    ids.splice(at,0,d.c.dataset.id);
-    reorder(ids);
+    if(d.col==null) return;
+    const lay=layout(visible()).map(l=>l.map(b=>b.id));
+    lay.forEach(l=>{ const i=l.indexOf(d.c.dataset.id); if(i>=0) l.splice(i,1); });
+    const tgt=lay[d.col]; let at=d.before?tgt.indexOf(d.before.dataset.id):tgt.length; if(at<0) at=tgt.length;
+    tgt.splice(at,0,d.c.dataset.id);
+    saveLayout(lay);
   }
-  box.addEventListener('pointerup',end); box.addEventListener('pointercancel',()=>{ if(D){ D.on&&chips().forEach(o=>{o.style.boxShadow='';o.style.transform='';}); D.c.classList.remove('dragging'); clearTimeout(D.t); D=null; } });
+  box.addEventListener('pointerup',end);
+  box.addEventListener('pointercancel',()=>{ if(D){ clear(); D.c.classList.remove('dragging'); clearTimeout(D.t); D=null; } });
 })();
-// zapisuje nową kolejność widocznych partii (pozostałe zachowują swoje miejsce)
-async function reorder(ids){
-  const all=[...BATCHES].sort(batchCmp), vis=new Set(ids);
-  const slots=all.map((b,i)=>vis.has(b.id)?i:-1).filter(i=>i>=0);
-  const out=all.slice(); slots.forEach((slot,k)=>out[slot]=byId(ids[k]));
+// zapisuje kolumnę i pozycję każdej widocznej partii
+async function saveLayout(lay,extraOps){
   const wb=db.batch(); let n=0;
-  out.forEach((b,i)=>{ if(b.order!==i){ b.order=i; wb.update(db.collection('batches').doc(b.id),{order:i}); n++; } });
+  lay.forEach((ids,ci)=>ids.forEach((id,i)=>{ const b=byId(id); if(!b) return;
+    if(b.col!==ci || b.order!==i){ b.col=ci; b.order=i; wb.update(db.collection('batches').doc(id),{col:ci,order:i}); n++; } }));
   BATCHES.sort(batchCmp); renderBatches();
-  if(n) try{ await wb.commit(); }catch(e){ alert('Nie udało się zapisać kolejności: '+authMsg(e)); }
+  if(n) try{ await wb.commit(); }catch(e){ alert('Nie udało się zapisać układu: '+authMsg(e)); }
 }
 function editing(){ const el=document.activeElement; return el && el.closest && el.closest('#pFerm .fields') ? el.id : null; }
 function renderForm(){
@@ -1067,6 +1097,7 @@ function newBatch(o){
   const id=db.collection('batches').doc().id;
   const sy=selYear();
   const b=normBatch(mk(Object.assign({name:`Partia ${visible().length+1}`,year:sy==='all'?new Date().getFullYear():sy,order:null,stageDates:{0:today()}},o&&o.name?o:{}, {id})));
+  { const lay=layout(visible()); let c=0; for(let i=1;i<COLS;i++) if(lay[i].length<lay[c].length) c=i; b.col=c; b.order=lay[c].length; }
   BATCHES.push(b); setActive(id); if(sy!=='all') setYear(b.year);
   db.collection('batches').doc(id).set(Object.assign(batchData(b),{createdAt:FV().serverTimestamp(),createdBy:ME.uid}))
     .catch(e=>alert('Nie udało się utworzyć partii: '+authMsg(e)));
@@ -1129,17 +1160,17 @@ document.querySelectorAll('#hScope .chip').forEach(c=>c.onclick=()=>{ state.scop
 $('cloneBtn').onclick=async()=>{
   const b=active(); if(!b) return;
   const n=Math.max(1,Math.min(20,parseInt($('cloneN').value,10)||1));
-  const baseName=b.name.replace(/\s+#\d+$/,'');
+  const root=baseName(b.name);
   const used=new Set(BATCHES.map(x=>x.name));
   const names=[]; let k=2;
-  while(names.length<n){ const nm=`${baseName} #${k++}`; if(!used.has(nm)) names.push(nm); }
+  while(names.length<n){ const nm=`${root} #${k++}`; if(!used.has(nm)) names.push(nm); }
   if(!confirm(`Utworzyć ${n===1?'kopię':n+' kopie'} partii „${b.name}”?
 ${names.join(', ')}`)) return;
   const src=HIST.filter(h=>h.batchId===b.id);
   const ops=[], B=db.collection('batches'), H=db.collection('history'); let first=null; const cloneIds=[];
   names.forEach((nm,i)=>{
     const ref=B.doc(); first=first||ref.id; cloneIds.push(ref.id);
-    const c=Object.assign({},b,{id:ref.id,name:nm,order:null,stageDates:Object.assign({},b.stageDates)});
+    const c=Object.assign({},b,{id:ref.id,name:nm,order:null,col:null,stageDates:Object.assign({},b.stageDates)});
     // kolejność według createdAt: kopie zaraz po sobie
     ops.push(wb=>wb.set(ref,Object.assign(batchData(c),{createdAt:firebase.firestore.Timestamp.fromMillis(Date.now()+i),createdBy:ME.uid,clonedFrom:b.id})));
     src.forEach(h=>{
@@ -1150,11 +1181,12 @@ ${names.join(', ')}`)) return;
     ops.push(wb=>wb.set(H.doc(),histDoc(c,`Sklonowana z partii „${b.name}”`)));
   });
   ops.push(wb=>wb.set(H.doc(),histDoc(b,`Sklonowano: ${names.join(', ')}`)));
-  // kolejność: kopie zaraz pod oryginałem (i pod jego wcześniejszymi kopiami)
-  const sorted=[...BATCHES].sort(batchCmp), base2=b.name.replace(/\s+#\d+$/,'');
-  let at=sorted.indexOf(b); while(at+1<sorted.length && sorted[at+1].name.replace(/\s+#\d+$/,'')===base2) at++;
-  const orderIds=sorted.map(x=>x.id); orderIds.splice(at+1,0,...cloneIds);
-  orderIds.forEach((id,i)=>{ const x=byId(id); if(!x || x.order!==i) ops.push(wb=>wb.update(B.doc(id),{order:i})); if(x) x.order=i; });
+  // układ: kopie w kolumnie oryginału, zaraz pod nim (i pod jego wcześniejszymi kopiami)
+  const lay=layout(visible().includes(b)?visible():[...visible(),b]).map(l=>l.map(x=>x.id));
+  const ci=lay.findIndex(l=>l.includes(b.id)), colIds=lay[ci];
+  let at=colIds.indexOf(b.id); while(at+1<colIds.length && baseName(byId(colIds[at+1]).name)===baseName(b.name)) at++;
+  colIds.splice(at+1,0,...cloneIds);
+  lay.forEach((ids,c)=>ids.forEach((id,i)=>{ const x=byId(id); if(!x || x.col!==c || x.order!==i) ops.push(wb=>wb.update(B.doc(id),{col:c,order:i})); if(x){ x.col=c; x.order=i; } }));
   try{
     for(let i=0;i<ops.length;i+=400){ const wb=db.batch(); ops.slice(i,i+400).forEach(fn=>fn(wb)); await wb.commit(); }
     $('cloneN').value=1; setActive(first);
