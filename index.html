@@ -376,12 +376,6 @@ dialog h3{font-size:17px;margin:18px 0 8px}
 <dialog id="dlgUsers" aria-labelledby="duTitle">
   <h2 id="duTitle">Konto i użytkownicy</h2>
   <div id="duMe"></div>
-  <h3>Zmień swoje hasło</h3>
-  <div class="uform">
-    <input type="password" id="pwNew" placeholder="Nowe hasło (min. 6 znaków)" autocomplete="new-password" aria-label="Nowe hasło">
-    <button class="btn small ghost" id="pwBtn">Zmień hasło</button>
-  </div>
-  <p class="err" id="pwErr"></p>
   <h3>Użytkownicy</h3>
   <ul class="ulist" id="duList"></ul>
   <div id="duAdd" class="hidden">
@@ -394,6 +388,12 @@ dialog h3{font-size:17px;margin:18px 0 8px}
     </div>
     <p class="err" id="nuErr"></p>
   </div>
+  <h3 id="pwTitle">Zmień swoje hasło</h3>
+  <div class="uform">
+    <input type="password" id="pwNew" placeholder="Nowe hasło (min. 6 znaków)" autocomplete="new-password" aria-label="Nowe hasło">
+    <button class="btn small ghost" id="pwBtn">Zmień hasło</button>
+  </div>
+  <p class="err" id="pwErr"></p>
   <div class="actions" style="justify-content:space-between">
     <button class="btn danger small" id="logout">Wyloguj</button>
     <button class="btn ghost small" id="duClose">Zamknij</button>
@@ -1067,7 +1067,7 @@ $('esSeed').onclick=async()=>{
 };
 
 // ---------- konto i użytkownicy ----------
-$('meBtn').onclick=()=>{ renderUsers(); $('pwErr').textContent=''; $('nuErr').textContent=''; $('dlgUsers').showModal(); };
+$('meBtn').onclick=()=>{ if(!auth.currentUser||!MYDOC) return; renderUsers(); $('pwErr').textContent=''; $('nuErr').textContent=''; $('dlgUsers').showModal(); };
 $('duClose').onclick=()=>$('dlgUsers').close();
 $('logout').onclick=$('naOut').onclick=async()=>{ if(db&&ME) flushPending(); try{$('dlgUsers').close();}catch(e){} await auth.signOut(); };
 function renderUsers(){
@@ -1078,6 +1078,7 @@ function renderUsers(){
   $('duList').innerHTML=list.map(([uid,u])=>`<li>${avatar(uid)}<div>${esc(u.name)} <small>${esc(u.login)}${u.role==='admin'?' · administrator':''}</small></div>`+
     (admin&&uid!==ME.uid?`<span class="chips"><button class="btn ghost small" data-role="${uid}">${u.role==='admin'?'Odbierz administratora':'Nadaj administratora'}</button><button class="btn danger small" data-rm="${uid}">Odbierz dostęp</button></span>`:'<span></span>')+`</li>`).join('');
   $('duAdd').classList.toggle('hidden',!admin);
+  $('pwTitle').textContent=`Zmień swoje hasło (konto ${MYDOC.login})`;
 }
 $('duList').addEventListener('click',async e=>{
   const ru=e.target.dataset&&e.target.dataset.role;
@@ -1098,6 +1099,7 @@ let secondary=null;
 $('nuBtn').onclick=async()=>{
   const login=normLogin($('nuLogin').value), name=$('nuName').value.trim()||login, pw=$('nuPass').value;
   const err=$('nuErr'); err.textContent='';
+  if(!ME||!auth.currentUser){ err.textContent='Sesja wygasła. Zaloguj się ponownie.'; return; }
   if(!LOGIN_RE.test(login)){ err.textContent='Login: 2–30 znaków, małe litery bez polskich znaków, cyfry, kropka, myślnik.'; return; }
   if(pw.length<6){ err.textContent='Hasło musi mieć co najmniej 6 znaków.'; return; }
   if(Object.values(USERS).some(u=>u.login===login)){ err.textContent='Taki użytkownik już ma dostęp.'; return; }
@@ -1201,6 +1203,7 @@ function boot(){
   auth.onAuthStateChanged(u=>{
     if(meUnsub){ meUnsub(); meUnsub=null; } stopData();
     ME=u; MYDOC=null;
+    try{ if($('dlgUsers').open) $('dlgUsers').close(); }catch(e){}
     if(!u){ show(''); showEntry(); return; }
     show('scrLoading'); $('loadMsg').textContent='Wczytywanie…';
     meUnsub=db.collection('users').doc(u.uid).onSnapshot(s=>{
