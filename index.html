@@ -187,7 +187,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .tl .notes{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:7px}
 .tl .note{display:grid;grid-template-columns:40px 1fr auto;gap:6px;font-size:14px;line-height:1.4;align-items:start}
 .tl .note .nd{color:var(--muted);font-size:12.5px;padding-top:1px;font-variant-numeric:tabular-nums}
-.tl .note div{overflow-wrap:anywhere}
+.tl .note .nt{appearance:none;background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;
+  display:grid;grid-template-columns:1fr 14px;gap:4px;align-items:start;min-width:0}
+.tl .note .nt>span{overflow:hidden;overflow-wrap:anywhere;max-height:1.4em;transition:max-height .3s ease}
+.tl .note.open .nt>span{max-height:40em}
+.tl .note:not(.open) .nt>span{white-space:nowrap;text-overflow:ellipsis}
+.tl .note:not(.open) small{display:none}
+.tl .note .chev{width:8px;height:8px;margin-top:5px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);transition:transform .25s}
+.tl .note.open .chev{transform:rotate(-135deg);margin-top:9px}
+.tl .note .nt:hover .chev{border-color:var(--accent)}
 .tl .note small{color:var(--muted);font-size:12px}
 .tl .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:17px;line-height:1;padding:0 4px}
 .tl .addb{appearance:none;background:none;border:1px dashed var(--accent-soft);color:var(--muted);border-radius:8px;font:inherit;font-size:13px;padding:2px 10px;margin-top:8px;cursor:pointer}
@@ -616,7 +624,7 @@ $('cfgSave').onclick=()=>{
 let auth=null, db=null, CFG=null, ME=null, MYDOC=null, settingUp=false;
 let USERS={}, BATCHES=[], HIST=[];
 let dataUnsubs=[], meUnsub=null, dataOn=false, loaded={b:false,h:false,u:false};
-const state={mode:'ferm', addAt:null};   // addAt: przy którym etapie otwarte jest dodawanie wpisu
+const state={mode:'ferm', addAt:null, openNotes:new Set()};   // addAt: przy którym etapie otwarte jest dodawanie wpisu; openNotes: rozwinięte notatki
 const FU={target:null, add:{}, phase:'idle'};
 const FV = () => firebase.firestore.FieldValue;
 
@@ -1136,8 +1144,10 @@ function renderStage(){
     else { const e=stageEstimate(b,i); if(e) when=`<span class="est">ok. ${shortDate(e[0])}–${shortDate(e[1])}</span>`; }
     const desc = i===b.stage ? `<div class="desc"><p class="time">${s.time}</p><p>${s.text}</p></div>` : '';
     const list = notes[i].sort((x,y)=>x.d.localeCompare(y.d) || tsMs(x.ts)-tsMs(y.ts)).map(h=>{
-      const A=author(h), canDel=admin || (ME && h.uid===ME.uid);
-      return `<li class="note"><span class="nd">${shortDate(h.d)}</span><div>${esc(h.t)} <small>· ${esc(A.name)}</small></div>`+
+      // notatka zwinięta do jednej linii, klik wysuwa całość
+      const A=author(h), canDel=admin || (ME && h.uid===ME.uid), op=state.openNotes.has(h.id);
+      return `<li class="note${op?' open':''}"><span class="nd">${shortDate(h.d)}</span>`+
+        `<button type="button" class="nt" data-n="${h.id}" aria-expanded="${op}"><span>${esc(h.t)} <small>· ${esc(A.name)}</small></span><i class="chev" aria-hidden="true"></i></button>`+
         (canDel?`<button class="x" data-h="${h.id}" aria-label="Usuń wpis">×</button>`:'<span></span>')+`</li>`;
     }).join('');
     const add = state.addAt===i
@@ -1290,6 +1300,10 @@ function addNote(){
   state.addAt=null; renderStage();
 }
 $('tl').addEventListener('click',e=>{
+  const nt=e.target.closest('.nt');
+  if(nt){ const id=nt.dataset.n, li=nt.parentElement, op=!li.classList.contains('open');
+    li.classList.toggle('open',op); nt.setAttribute('aria-expanded',op);
+    if(op) state.openNotes.add(id); else state.openNotes.delete(id); return; }
   const ds=e.target.dataset||{};
   if(ds.add!=null){ state.addAt=+ds.add; renderStage(); return; }
   if(ds.cancel!=null){ state.addAt=null; renderStage(); return; }

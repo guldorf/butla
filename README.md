@@ -53,5 +53,5 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
 
 ## Oś czasu i dźwięk
 
-- **Etap** (prawa kolumna) to oś czasu: nastaw, burzliwa, cicha, dojrzewanie. Przy każdym etapie jest data jego początku, a przy przyszłych – szacunek. Pod etapem stoją notatki z jego okresu, przypisane po dacie. „+ Dodaj wpis” dopisuje notatkę między etapami.
+- **Etap** (prawa kolumna) to oś czasu: nastaw, burzliwa, cicha, dojrzewanie. Przy każdym etapie jest data jego początku, a przy przyszłych – szacunek. Pod etapem stoją notatki z jego okresu, przypisane po dacie, zwinięte do jednej linii (klik wysuwa całość z autorem). „+ Dodaj wpis” dopisuje notatkę między etapami.
 - **Dźwięk** (menu w nagłówku): bąbelki są syntezowane w przeglądarce (Web Audio) – bulknięcie przy każdym bąblu w rurce i drobne bąbelki w winie, zsynchronizowane z animacją. Podkład „Mnisi” to film YouTube „Tibetan Monks – Tashilhunpo Monastery Chant” (kanał Mantraon, `LksBIDL6E2U`), osadzony oficjalnym odtwarzaczem w zapętleniu. Zasady YouTube wymagają widocznego odtwarzacza (min. 200×200 px), więc w czasie grania stoi w prawym dolnym rogu; × wyłącza mnichów. Ustawienia zapamiętują się w przeglądarce, a dźwięk rusza po pierwszym kliknięciu na stronie.
