@@ -183,7 +183,13 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .tl .note .nt>span{overflow:hidden;overflow-wrap:anywhere;max-height:1.4em;transition:max-height .3s ease}
 .tl .note.open .nt>span{max-height:40em}
 .tl .note:not(.open) .nt>span{white-space:nowrap;text-overflow:ellipsis}
-.tl .note:not(.open) small{display:none}
+.tl .note .nc{min-width:0}
+.tl .note .more{display:none;font-size:12px;color:var(--muted);margin-top:3px}
+.tl .note.open .more{display:block}
+.tl .note .more input[type=date]{width:auto;padding:1px 4px;font-size:12px;border-radius:6px}
+.tl .note .tag{font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--on-accent);background:var(--accent-soft);
+  border-radius:4px;padding:0 5px;margin-right:2px}
+.tl .note.plan .nd{color:var(--accent);font-weight:600}
 .tl .note .chev{width:8px;height:8px;margin-top:5px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);transition:transform .25s}
 .tl .note.open .chev{transform:rotate(-135deg);margin-top:9px}
 .tl .note .nt:hover .chev{border-color:var(--accent)}
@@ -1081,7 +1087,7 @@ function stageEstimate(b,j){
   return [addDays(base,lo),addDays(base,hi)];
 }
 // wpisy zapisywane automatycznie przy zmianie pól i etapów – na osi czasu ich nie pokazujemy (zostają w bazie)
-const AUTO_RE=/^(Partia utworzona|Nazwa: |Owoce: |Rocznik: |Pojemność naczynia: |Wino w naczyniu: |Drożdże|Pożywka: |Owoce \/ pulpa: |Cukier \((I|II) partia\): |Woda: |Etap: |Cofnięto do etapu: |Początek etapu |Sklonowan)/;
+const AUTO_RE=/^(Partia utworzona|Nazwa: |Owoce: |Rocznik: |Pojemność naczynia: |Wino w naczyniu: |Drożdże|Pożywka: |Owoce \/ pulpa: |Cukier( \((I|II) partia\))?: |Woda: |Etap: |Cofnięto do etapu: |Początek etapu |Sklonowan)/;
 const isNote = h => h.note || h.imp || !AUTO_RE.test(h.t||'');
 // oś czasu: etapy partii, a pod każdym notatki z jego okresu i „+ Dodaj wpis”
 function renderStage(){
@@ -1103,10 +1109,11 @@ function renderStage(){
     else { const e=stageEstimate(b,i); if(e) when=`<span class="est">ok. ${shortDate(e[0])}–${shortDate(e[1])}</span>`; }
     const desc = i===b.stage ? `<div class="desc"><p class="time">${s.time}</p><p>${s.text}</p></div>` : '';
     const list = notes[i].sort((x,y)=>x.d.localeCompare(y.d) || tsMs(x.ts)-tsMs(y.ts)).map(h=>{
-      // notatka zwinięta do jednej linii, klik wysuwa całość
-      const A=author(h), canDel=admin || (ME && h.uid===ME.uid), op=state.openNotes.has(h.id);
-      return `<li class="note${op?' open':''}"><span class="nd">${shortDate(h.d)}</span>`+
-        `<button type="button" class="nt" data-n="${h.id}" aria-expanded="${op}"><span>${esc(h.t)} <small>· ${esc(A.name)}</small></span><i class="chev" aria-hidden="true"></i></button>`+
+      // notatka zwinięta do jednej linii, klik wysuwa całość; data w przyszłości = plan
+      const A=author(h), canDel=admin || (ME && h.uid===ME.uid), op=state.openNotes.has(h.id), plan=h.d>today();
+      return `<li class="note${op?' open':''}${plan?' plan':''}"><span class="nd">${shortDate(h.d)}</span><div class="nc">`+
+        `<button type="button" class="nt" data-n="${h.id}" aria-expanded="${op}"><span>${plan?'<b class="tag">plan</b> ':''}${esc(h.t)}</span><i class="chev" aria-hidden="true"></i></button>`+
+        `<div class="more">${esc(A.name)}`+(canDel?` · <label>data <input type="date" data-nd="${h.id}" value="${h.d}" aria-label="Data wpisu"></label>`:'')+`</div></div>`+
         (canDel?`<button class="x" data-h="${h.id}" aria-label="Usuń wpis">×</button>`:'<span></span>')+`</li>`;
     }).join('');
     const add = state.addAt===i
@@ -1244,6 +1251,19 @@ $('next').onclick=()=>{ const b=active(); if(b.stage<STAGES.length-1){ b.stage++
 $('prev').onclick=()=>{ const b=active(); if(b.stage>0){ const sd=Object.assign({},b.stageDates); delete sd[b.stage]; b.stageDates=sd; b.stage--;
   save(b); log(b,`Cofnięto do etapu: ${STAGES[b.stage].name}`); refresh(); renderHints(); } };
 $('tl').addEventListener('change',e=>{
+  // zmiana daty notatki: historii nie wolno edytować (reguły), więc stary wpis znika, a nowy dostaje tego samego autora
+  const nd=e.target.dataset&&e.target.dataset.nd;
+  if(nd){
+    const h=HIST.find(x=>x.id===nd), v=e.target.value; if(!h || !/^\d{4}-\d{2}-\d{2}$/.test(v) || v===h.d) return;
+    const A=author(h), doc={}; for(const k in h) if(!['id','ts','uid','d'].includes(k)) doc[k]=h[k];
+    Object.assign(doc,{d:v,ts:FV().serverTimestamp(),uid:ME.uid});
+    if(h.uid!==ME.uid && !h.au){ if(h.uid) doc.au=h.uid; doc.an=A.name; }
+    const ref=db.collection('history').doc(), wb=db.batch();
+    wb.delete(db.collection('history').doc(h.id)); wb.set(ref,doc);
+    if(state.openNotes.delete(h.id)) state.openNotes.add(ref.id);
+    wb.commit().catch(err=>alert('Nie udało się zmienić daty: '+authMsg(err)));
+    return;
+  }
   const i=e.target.dataset&&e.target.dataset.sd; if(i==null) return;
   const b=active(), v=e.target.value; if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
   b.stageDates=Object.assign({},b.stageDates,{[i]:v}); save(b);
@@ -1258,7 +1278,7 @@ function addNote(){
 }
 $('tl').addEventListener('click',e=>{
   const nt=e.target.closest('.nt');
-  if(nt){ const id=nt.dataset.n, li=nt.parentElement, op=!li.classList.contains('open');
+  if(nt){ const id=nt.dataset.n, li=nt.closest('.note'), op=!li.classList.contains('open');
     li.classList.toggle('open',op); nt.setAttribute('aria-expanded',op);
     if(op) state.openNotes.add(id); else state.openNotes.delete(id); return; }
   const ds=e.target.dataset||{};

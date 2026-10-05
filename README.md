@@ -53,5 +53,5 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
 
 ## Oś czasu i dźwięk
 
-- **Etap** (prawa kolumna) to oś czasu: nastaw, burzliwa, cicha, dojrzewanie. Przy każdym etapie jest data jego początku, a przy przyszłych – szacunek. Pod etapem stoją notatki z jego okresu, przypisane po dacie, zwinięte do jednej linii (klik wysuwa całość z autorem). „+ Dodaj wpis” dopisuje notatkę między etapami.
+- **Etap** (prawa kolumna) to oś czasu: nastaw, burzliwa, cicha, dojrzewanie. Przy każdym etapie jest data jego początku, a przy przyszłych – szacunek. Pod etapem stoją notatki z jego okresu, przypisane po dacie, zwinięte do jednej linii (klik wysuwa całość z autorem i polem daty). Notatka z datą w przyszłości jest oznaczona jako „plan”. Zmiana daty usuwa stary wpis i zapisuje nowy z tym samym autorem (reguły nie pozwalają edytować historii). „+ Dodaj wpis” dopisuje notatkę między etapami.
 - **Dźwięk** (menu w nagłówku): bąbelki są syntezowane w przeglądarce (Web Audio, bez plików) – bulknięcie przy każdym bąblu w rurce i drobne bąbelki w winie, zsynchronizowane z animacją. Ustawienia zapamiętują się w przeglądarce, a dźwięk rusza po pierwszym kliknięciu na stronie.
