@@ -1,0 +1,8 @@
+# pliki z podkładem muzycznym zostają tylko na dysku (prywatne, nie do publikacji)
+*.mp3
+*.m4a
+*.wav
+*.ogg
+*.oga
+*.opus
+_test.html
