@@ -297,19 +297,6 @@ dialog h3{font-size:17px;margin:18px 0 8px}
                 <div class="field"><span class="lab">&nbsp;</span><div class="hint" id="yrHint"></div></div>
                 <div class="field"><label for="fCap">Pojemność naczynia (l)</label><input type="number" id="fCap" min="0.5" step="0.5"></div>
                 <div class="field"><label for="fVol">Ilość wina w naczyniu (l)</label><input type="number" id="fVol" min="0" step="0.5"><div class="hint" id="vHint"></div></div>
-                <div class="field full"><span class="lab">Drożdże</span><div class="chips" id="yeastChips"></div></div>
-                <div class="field">
-                  <label for="fYeast">Ilość drożdży (g)</label>
-                  <div class="stepper"><button type="button" data-step="fYeast:-0.5" aria-label="Mniej drożdży">−</button>
-                    <input type="number" id="fYeast" min="0" step="0.5"><button type="button" data-step="fYeast:0.5" aria-label="Więcej drożdży">+</button></div>
-                  <div class="hint" id="yHint"></div>
-                </div>
-                <div class="field">
-                  <label for="fNut">Pożywka (g)</label>
-                  <div class="stepper"><button type="button" data-step="fNut:-0.5" aria-label="Mniej pożywki">−</button>
-                    <input type="number" id="fNut" min="0" step="0.5"><button type="button" data-step="fNut:0.5" aria-label="Więcej pożywki">+</button></div>
-                  <div class="hint" id="nHint"></div>
-                </div>
                 <div class="field">
                   <label for="fPulpa">Owoce / pulpa (l)</label>
                   <div class="stepper"><button type="button" data-step="fPulpa:-0.5" aria-label="Mniej pulpy">−</button>
@@ -330,6 +317,19 @@ dialog h3{font-size:17px;margin:18px 0 8px}
                   <div class="stepper"><button type="button" data-step="fSugar2:-0.1" aria-label="Mniej cukru, II partia">−</button>
                     <input type="number" id="fSugar2" min="0" step="0.1"><button type="button" data-step="fSugar2:0.1" aria-label="Więcej cukru, II partia">+</button></div>
                   <div class="hint" id="s2Hint"></div>
+                </div>
+                <div class="field full"><span class="lab">Drożdże</span><div class="chips" id="yeastChips"></div></div>
+                <div class="field">
+                  <label for="fYeast">Ilość drożdży (g)</label>
+                  <div class="stepper"><button type="button" data-step="fYeast:-0.5" aria-label="Mniej drożdży">−</button>
+                    <input type="number" id="fYeast" min="0" step="0.5"><button type="button" data-step="fYeast:0.5" aria-label="Więcej drożdży">+</button></div>
+                  <div class="hint" id="yHint"></div>
+                </div>
+                <div class="field">
+                  <label for="fNut">Pożywka (g)</label>
+                  <div class="stepper"><button type="button" data-step="fNut:-0.5" aria-label="Mniej pożywki">−</button>
+                    <input type="number" id="fNut" min="0" step="0.5"><button type="button" data-step="fNut:0.5" aria-label="Więcej pożywki">+</button></div>
+                  <div class="hint" id="nHint"></div>
                 </div>
                 <div class="field full"><span class="lab">Proporcje nastawu</span><div id="propHint"></div><div class="hint" id="propHint2"></div>
                   <ul class="est-list" id="estList"></ul>
