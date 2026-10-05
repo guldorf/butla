@@ -529,7 +529,7 @@ const STAGES = [
   {name:'Burzliwa fermentacja', time:'Zwykle 5–10 dni',
    text:'Drożdże zamieniają cukier w alkohol i CO₂. Gaz wypycha pulpę w górę i tworzy czapę, nad którą zbiera się piana. Czapę warto zanurzać raz lub dwa razy dziennie. Zostaw 10–20% miejsca na pianę.'},
   {name:'Cicha fermentacja', time:'Kilka tygodni',
-   text:'Pulpa jest odcedzona, a wino pracuje spokojnie. Na dnie zbiera się osad drożdżowy, rurka bąbluje rzadko. Im mniej powietrza nad winem, tym lepiej: dolej pod szyjkę albo zatop zdezynfekowane butelki z wodą.'},
+   text:'Pulpa jest odcedzona, a wino pracuje spokojnie. Na dnie zbiera się osad drożdżowy, rurka bąbluje rzadko. Na wierzchu może zostać cienki kożuch z pianą – to normalne, jeśli pachnie winem; biały, pomarszczony nalot albo zapach octu to sygnał ostrzegawczy. Im mniej powietrza nad winem, tym lepiej: dolej pod szyjkę albo zatop zdezynfekowane butelki z wodą.'},
   {name:'Dojrzewanie', time:'Od kilku tygodni do miesięcy',
    text:'Wino się klaruje, a osad zbija się na dnie. Bąbel pojawia się tylko od czasu do czasu. To dobry moment na zlanie wina znad osadu.'},
 ];
@@ -751,9 +751,11 @@ function fermTargets(b){
     {id:'sok',order:2,label:'Fermentujący moszcz',rgb:mixc(W,hex('#EAD8B2'),.35),frac:Math.max(0,L-pu-pia-cu),op:.92,amp:3.6},
     {id:'pulpa',order:20,label:'Czapa z pulpy',rgb:P,frac:pu,op:1,amp:4.6,tex:1},
     {id:'piana',order:30,label:'Piana',rgb:hex('#F2E8DA'),frac:pia,op:.88,amp:5.2}]}; }
-  if(s===2){ const os=Math.min(.05,fill*.07); return {air:.35*r, liq:2.4*r, layers:[
+  // cicha: osad na dnie i cienki kożuch z pianą na wierzchu
+  if(s===2){ const os=Math.min(.05,fill*.07), pia=Math.min(.024,fill*.04); return {air:.35*r, liq:2.4*r, layers:[
     {id:'osad',order:0,label:'Osad drożdżowy',rgb:hex('#B9A989'),frac:os,op:1,amp:1},
-    {id:'sok',order:2,label:'Młode wino',rgb:mixc(W,hex('#D9C7A6'),.22),frac:fill-os,op:.86,amp:2.4}]}; }
+    {id:'sok',order:2,label:'Młode wino',rgb:mixc(W,hex('#D9C7A6'),.22),frac:Math.max(0,fill-os-pia),op:.86,amp:2.4},
+    {id:'piana',order:30,label:'Kożuch z pianą',rgb:hex('#EDE2CF'),frac:pia,op:.9,amp:2.6}]}; }
   const os=Math.min(.03,fill*.04);
   return {air:.07*r, liq:.3, layers:[
     {id:'osad',order:0,label:'Osad',rgb:hex('#9C8D72'),frac:os,op:1,amp:.8},
