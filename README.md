@@ -9,7 +9,7 @@ Dane trzyma Firebase (Auth + Firestore, projekt `butla-91912`, baza `eur3`), str
 | Kolekcja | Zawartość |
 |---|---|
 | `users/{uid}` | `login`, `name`, `role` (`admin`/`user`), `color` |
-| `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast`, `yeastG`, `nutG`, `pulpaL`, `sugarKg` (cukier I partia), `sugarKg2` (cukier II partia), `waterL`, `stage`, `stageDates` (`{nr etapu: RRRR-MM-DD}`), `col` (kolumna 0–4), `order` (pozycja w kolumnie), `color`, `clonedFrom` |
+| `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast` (lista rodzajów: `malaga`, `sherry`, `uni`; starsze dane mają jeden napis), `yeastG` (razem), `nutG`, `pulpaL`, `sugarKg` (cukier I partia), `sugarKg2` (cukier II partia), `waterL`, `stage`, `stageDates` (`{nr etapu: RRRR-MM-DD}`), `col` (kolumna 0–4), `order` (pozycja w kolumnie), `color`, `clonedFrom` |
 | `history/{id}` | `batchId`, `bn` (nazwa partii), `d` (data `RRRR-MM-DD`), `t` (treść), `ts`, `uid` (kto zapisał), opcjonalnie `au`/`an` (pierwotny autor przy kopiach i imporcie), `imp` |
 | `meta/setup` | `adminUid` – znacznik, że konto administratora już istnieje |
 

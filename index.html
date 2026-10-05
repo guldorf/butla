@@ -4,44 +4,47 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Butla – dziennik winiarski</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍷</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M13 1h6v9c0 2 4 3 4 7v12c0 1.5-1 2-2 2H11c-1 0-2-.5-2-2V17c0-4 4-5 4-7z' fill='%232B2A29'/><rect x='10.5' y='18' width='11' height='8' fill='%2367B437'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Instrument+Sans:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
+/* motyw z logo „Si qu’a la font”: grafit #2B2A29 na bieli, zieleń etykiety #67B437 */
 :root{
-  --bg:#E2E8E1; --surface:#F3F5F0; --ink:#2A1A2E; --muted:#5D5562; --line:#C4CDC2;
-  --glass:#6C897C; --glass-fill:rgba(150,185,168,.16); --on-ink:#F3F5F0; --warn:#9A3B1E;
-  --accent:#67B437; --accent-soft:rgba(103,180,55,.45); --on-accent:#1B2A10; --logo-ink:#2B2A29; --logo-white:#FEFEFE; --alarm-bg:#F6DDD3;
+  --bg:#F4F4F1; --surface:#FEFEFE; --ink:#2B2A29; --muted:#6E6C68; --line:#DCDCD6;
+  --glass:#7D8C83; --glass-fill:rgba(125,140,131,.12); --on-ink:#FEFEFE; --warn:#A1361B;
+  --accent:#67B437; --accent-soft:rgba(103,180,55,.45); --on-accent:#2B2A29; --logo-ink:#2B2A29; --logo-white:#FEFEFE; --alarm-bg:#F8E1D8;
   color-scheme:light; box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#172019; --surface:#202A23; --ink:#EEE6EF; --muted:#A99FAC; --line:#344038;
-    --glass:#8DB3A1; --glass-fill:rgba(141,179,161,.10); --on-ink:#172019; --warn:#E59A7C; color-scheme:dark;
+    --bg:#1C1C1B; --surface:#262624; --ink:#EFEEEA; --muted:#A6A49F; --line:#3A3A37;
+    --glass:#9AAA9F; --glass-fill:rgba(154,170,159,.10); --on-ink:#1C1C1B; --warn:#E59A7C; color-scheme:dark;
     --accent:#74C443; --accent-soft:rgba(116,196,67,.45); --on-accent:#13200B; --logo-ink:var(--ink); --logo-white:var(--bg); --alarm-bg:#45231A;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#172019; --surface:#202A23; --ink:#EEE6EF; --muted:#A99FAC; --line:#344038;
-  --glass:#8DB3A1; --glass-fill:rgba(141,179,161,.10); --on-ink:#172019; --warn:#E59A7C; color-scheme:dark;
-    --accent:#74C443; --accent-soft:rgba(116,196,67,.45); --on-accent:#13200B; --logo-ink:var(--ink); --logo-white:var(--bg); --alarm-bg:#45231A;
+  --bg:#1C1C1B; --surface:#262624; --ink:#EFEEEA; --muted:#A6A49F; --line:#3A3A37;
+  --glass:#9AAA9F; --glass-fill:rgba(154,170,159,.10); --on-ink:#1C1C1B; --warn:#E59A7C; color-scheme:dark;
+  --accent:#74C443; --accent-soft:rgba(116,196,67,.45); --on-accent:#13200B; --logo-ink:var(--ink); --logo-white:var(--bg); --alarm-bg:#45231A;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5}
+  font-family:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5}
 .wrap{max-width:1440px;margin:0 auto;padding:26px 20px 48px}
-h1,h2,h3{font-family:"Young Serif",Georgia,"Times New Roman",serif;font-weight:400}
+/* nagłówki cienkim krojem jak napis „qu’a la font”, z zieloną kreską jak etykieta na butelce */
+h1,h2,h3{font-family:"Jost",system-ui,sans-serif;font-weight:300;letter-spacing:.02em}
+.block h2,.side h2,dialog h2{display:flex;align-items:center;gap:10px}
+.block h2::before,.side h2::before,dialog h2::before{content:"";width:5px;height:.95em;border-radius:1px;background:var(--accent);flex:none}
 header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
 header h1{font-size:clamp(30px,4.5vw,44px);line-height:1.1;margin:0}
 header{border-bottom:2px solid var(--accent-soft);padding-bottom:16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
 header .brand{grid-column:2;text-align:center}
-header .brand p{margin:6px auto 0}
 header .io{grid-column:3;justify-self:end;align-self:start}
 @media (max-width:760px){header{grid-template-columns:1fr}header .brand,header .io{grid-column:1}header .io{justify-self:center}}
 .logo{display:flex;justify-content:center;margin:0}
@@ -64,15 +67,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .est-list b{font-weight:600}
 .chip.dragging{opacity:.9;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:5;position:relative;cursor:grabbing}
 #batches .chip:not(.add){touch-action:manipulation;user-select:none;-webkit-user-select:none}
-header p{margin:4px 0 0;color:var(--muted);max-width:56ch}
 .io{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .batches{margin:12px 0 4px}
 .bgrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;padding-bottom:4px}
 .bcol{display:flex;flex-direction:column;gap:6px;min-height:40px;border-radius:12px;padding:3px;transition:background .15s}
 .batches.drag-on .bcol{outline:1.5px dashed var(--accent-soft)}
 .batches.drag-on .bcol.target{background:rgba(103,180,55,.12);outline-color:var(--accent)}
-.batches .chip{justify-content:flex-start;padding:7px 12px 7px 10px;min-width:0;border-radius:14px}
-.batches .chip .nm{min-width:0;line-height:1.25;overflow-wrap:anywhere;text-align:left}
+.batches .chip{justify-content:flex-start;flex-wrap:wrap;row-gap:0;padding:7px 12px 7px 10px;min-width:0;border-radius:14px}
+.batches .chip .nm{min-width:0;flex:1 1 auto;line-height:1.25;overflow-wrap:break-word;text-align:left}
 .batches .chip small{margin-left:auto;padding-left:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .batches .chip.add{justify-content:center;margin-top:8px}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 15px 8px 10px;border-radius:999px;
@@ -84,9 +86,9 @@ header p{margin:4px 0 0;color:var(--muted);max-width:56ch}
 .chip.small{padding:5px 12px;font-size:14px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .years{display:flex;flex-wrap:wrap;gap:4px;margin:20px 0 0}
-.yr{appearance:none;font:inherit;font-family:"Young Serif",Georgia,serif;font-size:18px;padding:4px 12px;border-radius:8px;
+.yr{appearance:none;font:inherit;font-weight:300;font-size:19px;letter-spacing:.03em;padding:4px 12px;border-radius:8px;
   border:0;background:none;color:var(--muted);cursor:pointer}
-.yr small{font-family:"Instrument Sans",system-ui,sans-serif;font-size:12px;margin-left:4px}
+.yr small{font-weight:400;font-size:12px;margin-left:4px;letter-spacing:0}
 .yr[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
 .tabs{display:flex;gap:2px;margin:18px 0 22px;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden}
 .tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;
@@ -150,7 +152,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .side .addrow{display:grid;grid-template-columns:1fr;gap:8px;margin:12px 0 4px}
 .side .addrow .two{display:grid;grid-template-columns:1fr auto;gap:8px}
 .hlist{overflow-y:auto;margin:10px -6px 0;padding:0 6px}
-.day{font-family:"Young Serif",Georgia,serif;font-size:15px;color:var(--muted);margin:14px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--accent-soft)}
+.day{font-weight:500;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;padding-bottom:4px;border-bottom:1px solid var(--accent-soft)}
 .day:first-child{margin-top:0}
 .he{display:grid;grid-template-columns:28px 1fr auto;gap:10px;padding:8px 0;align-items:start}
 .he+.he{border-top:1px dashed var(--line)}
@@ -254,7 +256,6 @@ dialog h3{font-size:17px;margin:18px 0 8px}
   <header>
     <div class="brand">
       <h1 class="logo"><svg viewBox="0 0 191 124" role="img" aria-label="Si qu’a la font"><use href="#logoSym"/></svg><span class="sr">Butla</span></h1>
-      <p><b>Butla</b> – partie wina, etapy fermentacji, fuzje i historia działań.</p>
     </div>
     <div class="io">
       <button class="btn ghost small" id="exp">Eksportuj dane</button>
@@ -318,7 +319,7 @@ dialog h3{font-size:17px;margin:18px 0 8px}
                     <input type="number" id="fSugar2" min="0" step="0.1"><button type="button" data-step="fSugar2:0.1" aria-label="Więcej cukru, II partia">+</button></div>
                   <div class="hint" id="s2Hint"></div>
                 </div>
-                <div class="field full"><span class="lab">Drożdże</span><div class="chips" id="yeastChips"></div></div>
+                <div class="field full"><span class="lab">Drożdże (można zaznaczyć kilka)</span><div class="chips" id="yeastChips"></div></div>
                 <div class="field">
                   <label for="fYeast">Ilość drożdży (g)</label>
                   <div class="stepper"><button type="button" data-step="fYeast:-0.5" aria-label="Mniej drożdży">−</button>
@@ -406,7 +407,7 @@ dialog h3{font-size:17px;margin:18px 0 8px}
             <rect x="146" y="40" width="8" height="30" rx="2" fill="none" stroke="var(--glass)" stroke-width="1.2" stroke-opacity=".7"/>
             <rect x="130" y="14" width="40" height="56" rx="10" fill="none" stroke="var(--glass)" stroke-width="2.5"/>
             <rect x="136" y="8" width="28" height="8" rx="3" fill="var(--glass)"/>
-            <g id="labels" font-family="Instrument Sans, system-ui, sans-serif" font-size="14" fill="var(--ink)"></g>
+            <g id="labels" font-family="Jost, system-ui, sans-serif" font-size="14" fill="var(--ink)"></g>
           </svg>
           <p class="cap" id="vCap"></p>
         </div>
@@ -489,6 +490,10 @@ const FRUITS = {
 };
 const YEASTS = {malaga:'Malaga 1', sherry:'Sherry', uni:'Uniwersalne'};
 const YEAST_ABV = {malaga:16, sherry:17, uni:14};     // ile % alkoholu drożdże zwykle udźwigną
+// partia może mieć kilka rodzajów drożdży naraz (b.yeast = lista kluczy); starsze dane mają jeden klucz
+const yeastList = y => { const a=Array.isArray(y)?y:[y], l=Object.keys(YEASTS).filter(k=>a.includes(k)); return l.length ? l : ['uni']; };
+const yeastNames = b => yeastList(b.yeast).map(k=>YEASTS[k]).join(' + ');
+const yeastTol = b => Math.max(...yeastList(b.yeast).map(k=>YEAST_ABV[k]||14));  // najmocniejsze dociągną najdalej
 // Wzrost w burzliwej: 15 l pulpy + 6 kg cukru + 6 l wody (ok. 24,8 l) podniosło się o 3 l
 const RISE = 3/(15+6*0.63+6);
 // orientacyjny czas trwania etapu i (dni): od-do
@@ -625,7 +630,7 @@ const active = () => { const v=visible(), a=byId(activeId()); return (a&&v.inclu
 
 const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','sugarKg2','waterL','stage','color','order','col','stageDates'];
 function mk(o){
-  return Object.assign({name:'Nowa partia',year:new Date().getFullYear(),fruit:'ciemne',cap:5,vol:4.5,yeast:'uni',yeastG:5,nutG:0,
+  return Object.assign({name:'Nowa partia',year:new Date().getFullYear(),fruit:'ciemne',cap:5,vol:4.5,yeast:['uni'],yeastG:5,nutG:0,
     pulpaL:2,sugarKg:1,sugarKg2:0,waterL:2,stage:0,color:null},o);
 }
 // przyjmuje partię z bazy albo z eksportu (także starszego, z proporcjami w %)
@@ -653,7 +658,7 @@ function normBatch(o){
   out.order = typeof out.order==='number' && isFinite(out.order) ? out.order : null;
   out.col = validCol(out.col) ? out.col : null;
   if(!FRUITS[out.fruit]) out.fruit='inne';
-  if(!YEASTS[out.yeast]) out.yeast='uni';
+  out.yeast=yeastList(out.yeast);
   out.name=String(out.name||'Bez nazwy');
   { const y=parseInt(b.year!=null?b.year:(b.rocznik!=null?b.rocznik:''),10);
     out.year = y>=1990&&y<=2100 ? y : (tsMs(o.createdAt) ? new Date(tsMs(o.createdAt)).getFullYear() : new Date().getFullYear()); }
@@ -945,8 +950,12 @@ function renderForm(){
 }
 function renderYeast(){
   const b=active(), box=$('yeastChips'); box.innerHTML='';
-  Object.entries(YEASTS).forEach(([k,n])=>box.appendChild(chip(n,'var(--ink)',k===b.yeast,()=>{
-    if(b.yeast===k) return; b.yeast=k; save(b); log(b,`Drożdże: ${n}`); renderYeast(); renderHints();
+  // zaznacza się dowolną liczbę rodzajów; ostatniego nie da się odznaczyć
+  Object.entries(YEASTS).forEach(([k,n])=>box.appendChild(chip(n,b.yeast.includes(k)?'var(--accent)':'var(--line)',b.yeast.includes(k),()=>{
+    const on=b.yeast.includes(k);
+    if(on && b.yeast.length===1) return;
+    b.yeast = on ? b.yeast.filter(x=>x!==k) : Object.keys(YEASTS).filter(x=>x===k||b.yeast.includes(x));
+    save(b); log(b,`Drożdże: ${on?'usunięto':'dodano'} ${n} (teraz ${yeastNames(b)})`); renderYeast(); renderHints();
   })));
 }
 function renderHints(){
@@ -964,7 +973,7 @@ function renderHints(){
     `<li>Etapy: burzliwa <b>${rng(d[1][0],d[1][1],'dni')}</b>, cicha <b>${rng(d[2][0]/7,d[2][1]/7,'tyg.')}</b>, dojrzewanie <b>${rng(d[3][0]/30,Math.round(d[3][1]/30),'mies.')}</b></li>`,
     `<li>Czystego wina: <b>ok. ${fmt(Math.round(E.clear*2)/2)} l</b> (po odcedzeniu pulpy i zlaniu z osadu)</li>`,
     `<li>Alkohol: <b>ok. ${Math.round(E.abv)}%</b>`+(E.potential>E.abv+.5
-      ? ` – cukru starczy na ${Math.round(E.potential)}%, ale drożdże ${YEASTS[b.yeast]} zwykle kończą ok. ${E.tol}%; zostanie <b>${E.style}</b> (ok. ${Math.round(E.residual)} g cukru na litr)</li>`
+      ? ` – cukru starczy na ${Math.round(E.potential)}%, ale drożdże ${yeastNames(b)} zwykle kończą ok. ${E.tol}%; zostanie <b>${E.style}</b> (ok. ${Math.round(E.residual)} g cukru na litr)</li>`
       : `, wino raczej <b>${E.style}</b></li>`),
   ].join('');
   // alarm: czapa w burzliwej podnosi nastaw o ok. 12%
@@ -983,7 +992,7 @@ function estimate(b){
   const liquid=b.waterL + sugarTot(b)*SUGAR_L + b.pulpaL*F.juice;
   const sugarG=sugarTot(b)*1000 + b.pulpaL*F.sug;
   const potential = liquid>0 ? sugarG/liquid/17 : 0;
-  const tol=YEAST_ABV[b.yeast]||14, abv=Math.min(potential,tol), residual=Math.max(0,(potential-abv)*17);
+  const tol=yeastTol(b), abv=Math.min(potential,tol), residual=Math.max(0,(potential-abv)*17);
   const style = residual<4 ? 'wytrawne' : residual<12 ? 'półwytrawne' : residual<45 ? 'półsłodkie' : 'słodkie';
   return {clear:liquid*.9, potential, abv, tol, residual, style};
 }
@@ -1048,7 +1057,7 @@ function renderFusion(){
   if(!byId(FU.target)) FU.target=(active()||{}).id;
   const t=byId(FU.target); if(!t) return;
   $('fuTarget').innerHTML=BATCHES.map(b=>`<option value="${b.id}" ${b.id===FU.target?'selected':''}>${esc(b.name)} ${b.year} (${fmt(b.vol)} z ${fmt(b.cap)} l)</option>`).join('');
-  $('fuTHint').textContent=`${FRUITS[t.fruit].name}, ${YEASTS[t.yeast]}, ${STAGES[t.stage].name.toLowerCase()}`;
+  $('fuTHint').textContent=`${FRUITS[t.fruit].name}, ${yeastNames(t)},${STAGES[t.stage].name.toLowerCase()}`;
   const rows=$('rows'); rows.innerHTML='';
   const others=BATCHES.filter(b=>b.id!==t.id);
   if(!others.length){ rows.innerHTML='<p class="empty">Dodaj drugą partię, żeby coś zmieszać.</p>'; }
@@ -1130,7 +1139,7 @@ $('fYear').addEventListener('change',e=>{ const b=active(); if(!b) return; const
   const was=b.year; b.year=y; save(b); log(b,`Rocznik: ${was} → ${y}`); setActive(b.id); if(selYear()!=='all') setYear(y); renderAll(); });
 numField('fCap','cap',.5,(c,was)=>r2(c.cap)!==r2(was)?`Pojemność naczynia: z ${fmt(was)} na ${fmt(c.cap)} l`:null);
 numField('fVol','vol',0,(c,was)=>diffText('Wino w naczyniu','l',c.vol,was));
-numField('fYeast','yeastG',0,(c,was)=>diffText(`Drożdże ${YEASTS[c.yeast]}`,'g',c.yeastG,was,sachets(c.yeastG)));
+numField('fYeast','yeastG',0,(c,was)=>diffText(`Drożdże ${yeastNames(c)}`,'g',c.yeastG,was,sachets(c.yeastG)));
 numField('fNut','nutG',0,(c,was)=>diffText('Pożywka','g',c.nutG,was));
 const propTxt=c=>{ const N=nastaw(c); return N?`pulpa ${Math.round(N.p)}%, cukier ${Math.round(N.s)}%, woda ${Math.round(N.w)}%`:''; };
 numField('fPulpa','pulpaL',0,(c,was)=>diffText('Owoce / pulpa','l',c.pulpaL,was,propTxt(c)));
@@ -1232,9 +1241,12 @@ $('mix').onclick=()=>{
     J.src.forEach(b=>{ const l=FU.add[b.id]; b.vol=Math.max(0,r2(b.vol-l));
       wb.update(B.doc(b.id),{vol:b.vol,updatedAt:FV().serverTimestamp(),updatedBy:ME.uid});
       wb.set(H.doc(),histDoc(b,`Przelano ${fmt(l)} l do partii ${J.t.name}`)); });
-    J.t.vol=r2(J.total); J.t.color=toHex(J.mix);
-    wb.update(B.doc(J.t.id),{vol:J.t.vol,color:J.t.color,updatedAt:FV().serverTimestamp(),updatedBy:ME.uid});
-    wb.set(H.doc(),histDoc(J.t,`Fuzja: dolano ${parts}. Razem ${fmt(J.t.vol)} l.`));
+    // dolane wino wnosi swoje drożdże
+    const ys=Object.keys(YEASTS).filter(k=>[J.t,...J.src].some(b=>b.yeast.includes(k)));
+    const newY=ys.filter(k=>!J.t.yeast.includes(k)).map(k=>YEASTS[k]);
+    J.t.vol=r2(J.total); J.t.color=toHex(J.mix); J.t.yeast=ys;
+    wb.update(B.doc(J.t.id),{vol:J.t.vol,color:J.t.color,yeast:ys,updatedAt:FV().serverTimestamp(),updatedBy:ME.uid});
+    wb.set(H.doc(),histDoc(J.t,`Fuzja: dolano ${parts}. Razem ${fmt(J.t.vol)} l.`+(newY.length?` Doszły drożdże: ${newY.join(', ')}.`:'')));
     try{ await wb.commit(); }catch(e){ alert('Nie udało się zapisać fuzji: '+authMsg(e)); FU.phase='idle'; refresh(); return; }
     let fr=0; for(const id in cur){ if(id.startsWith('c_')){ fr+=cur[id].frac; delete cur[id]; } }
     if(cur.f_base) cur.f_base.frac+=fr;
