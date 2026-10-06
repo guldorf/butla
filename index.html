@@ -36,19 +36,24 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:"Jost",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5}
-.wrap{max-width:1440px;margin:0 auto;padding:26px 20px 48px}
+.wrap{max-width:1440px;margin:0 auto;padding:14px 20px 48px}
 /* nagłówki cienkim krojem jak napis „qu’a la font”, z zieloną kreską jak etykieta na butelce */
 h1,h2,h3{font-family:"Jost",system-ui,sans-serif;font-weight:300;letter-spacing:.02em}
 .block h2,.side h2,dialog h2{display:flex;align-items:center;gap:10px}
 .block h2::before,.side h2::before,dialog h2::before{content:"";width:5px;height:.95em;border-radius:1px;background:var(--accent);flex:none}
-header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
-header h1{font-size:clamp(30px,4.5vw,44px);line-height:1.1;margin:0}
-header{border-bottom:2px solid var(--accent-soft);padding-bottom:16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
-header .brand{grid-column:2;text-align:center}
-header .io{grid-column:3;justify-self:end;align-self:start}
-@media (max-width:760px){header{grid-template-columns:1fr}header .brand,header .io{grid-column:1}header .io{justify-self:center}}
-.logo{display:flex;justify-content:center;margin:0}
-.logo svg{height:clamp(130px,17vw,190px);width:auto;display:block}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 12px;
+  border-bottom:2px solid var(--accent-soft);padding-bottom:10px}
+header h1{line-height:1;margin:0}
+.logo{display:flex;margin:0}
+.logo svg{height:clamp(54px,6vw,68px);width:auto;display:block}
+header .logo svg{transition:opacity .3s}
+/* wejście: duże logo na środku, potem maleje do lewego rogu */
+.intro{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--bg);pointer-events:none}
+.intro svg{width:min(78vw,560px);height:auto;display:block;transform-origin:0 0}
+/* znak wodny w tle */
+.watermark{position:fixed;inset:0;z-index:0;display:grid;place-items:center;pointer-events:none;opacity:.045}
+.watermark svg{width:min(88vw,1100px);height:auto}
+.wrap,.screen{position:relative;z-index:1}
 .panel .logo{justify-content:center}
 .panel .logo svg{height:110px;margin:0 0 8px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -296,6 +301,8 @@ dialog h3{font-size:17px;margin:18px 0 8px}
     <div class="actions"><button class="btn ghost" id="naOut">Wyloguj</button></div>
   </div>
 </div>
+
+<div class="watermark" aria-hidden="true"><svg viewBox="0 0 191 124"><use href="#logoSym"/></svg></div>
 
 <!-- ===== aplikacja ===== -->
 <div class="wrap hidden" id="app">
@@ -1602,9 +1609,30 @@ function onDataErr(e){
   if(/permission-denied/.test(e.code||'')){ stopData(); $('naMsg').textContent='To konto nie ma (już) dostępu do Butli. Poproś administratora o dodanie.'; show('scrNoAccess'); }
   else console.error(e);
 }
+// duże logo na środku → po chwili maleje i odlatuje do lewego górnego rogu (raz na wczytanie strony)
+let introDone=false;
+function playIntro(){
+  if(introDone) return; introDone=true;
+  const target=document.querySelector('header .logo svg'); if(!target||!target.animate) return;
+  const ov=document.createElement('div'); ov.className='intro'; ov.setAttribute('aria-hidden','true');
+  ov.innerHTML='<svg viewBox="0 0 191 124"><use href="#logoSym"/></svg>';
+  document.body.appendChild(ov); target.style.opacity='0';
+  const big=ov.firstElementChild;
+  const finish=()=>{ target.style.opacity=''; ov.remove(); };
+  const RMo=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const a=big.getBoundingClientRect(), b=target.getBoundingClientRect();
+  const k=b.width/a.width, dx=b.left-a.left, dy=b.top-a.top;
+  big.animate([{opacity:0,transform:'scale(.92)'},{opacity:1,transform:'scale(1)'}],{duration:RMo?1:600,easing:'ease-out',fill:'forwards'});
+  setTimeout(()=>{
+    const mv=big.animate([{transform:'translate(0,0) scale(1)'},{transform:`translate(${dx}px,${dy}px) scale(${k})`}],
+      {duration:RMo?1:900,easing:'cubic-bezier(.6,0,.2,1)',fill:'forwards'});
+    ov.animate([{background:getComputedStyle(ov).backgroundColor},{background:'transparent'}],{duration:RMo?1:900,easing:'ease-in',fill:'forwards'});
+    mv.onfinish=finish; setTimeout(finish,2500);
+  },RMo?300:1500);
+}
 function maybeShowApp(){
   if(loaded.b&&loaded.h&&loaded.u){
-    if($('app').classList.contains('hidden')){ show('app'); if(!looping){ looping=true; requestAnimationFrame(loop); } }
+    if($('app').classList.contains('hidden')){ show('app'); window.scrollTo(0,0); playIntro(); if(!looping){ looping=true; requestAnimationFrame(loop); } }
     renderMe(); renderAll();
   }
 }
