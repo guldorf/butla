@@ -56,6 +56,11 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
 - **Naczynie** (`vessel`) – nazwa pojemnika, w którym stoi wino (np. wino „Rumcajs” w wiadrze „Weronika”); pokazywana w podpisie pod butlą, nie przechodzi na klony.
 - **Pomiary (Brix)** – wpisy historii z polem `brix` (liczba) i `note:true`; sekcja pokazuje ostatni odczyt, zmianę od poprzedniego, wykres trendu i komunikat „odczyt stoi”, gdy od pomiaru sprzed co najmniej 7 dni wahania mieszczą się w 0,5 Brix (czas na zlanie znad osadu). Pomiar dotyczy jednej butli i nie przechodzi na klony.
 
+## Fuzje – ślad w danych
+
+- Partia docelowa ma pole `fusions`: lista dolanych butli (`d`, `id`, `from`, `l` oraz `pulpaL`, `waterL`, `sugarKg`, `yeastG`, `nutG` – część składu butli źródłowej proporcjonalna do przelanych litrów). Przy polach nastawu widać „(+ … z fuzji → razem …)”, a pod proporcjami listę dolanych butli; proporcje i szacunki liczą cały skład.
+- Butla źródłowa ma `share` – jaka część jej składu jeszcze w niej została (1 = cała, 0 = pusta), żeby kolejne przelania z tej samej butli nie liczyły się podwójnie.
+
 ## Klony
 
 - Klon pamięta oryginał (`clonedFrom`). Zmiany w oryginale – rocznik, owoce, pojemność, ilość wina, drożdże, pożywka, pulpa, cukier, woda, etap i daty etapów – przechodzą od razu na wszystkie jego klony. Nowa notatka w oryginale trafia też do klonów (pole `src` wskazuje wpis źródłowy, więc zmiana daty idzie za nią).
