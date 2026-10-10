@@ -58,7 +58,7 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
 
 ## Fuzje – ślad w danych
 
-- Partia docelowa ma pole `fusions`: lista dolanych butli (`d`, `id`, `from`, `l` oraz `pulpaL`, `waterL`, `sugarKg`, `yeastG`, `nutG` – część składu butli źródłowej proporcjonalna do przelanych litrów). Przy polach nastawu widać „(+ … z fuzji → razem …)”, a pod proporcjami listę dolanych butli; proporcje i szacunki liczą cały skład.
+- Partia docelowa ma pole `fusions`: lista dolanych butli (`d`, `id`, `from`, `l` oraz `pulpaL`, `waterL`, `sugarKg`, `yeastG`, `nutG` – część składu butli źródłowej proporcjonalna do przelanych litrów). W okienkach nastawu jest suma (własny nastaw + fuzje), a pod nimi „(w tym + … z fuzji → razem …)”; przy edycji zapisuje się tylko własna część (wpisana suma minus fuzje), a pod proporcjami listę dolanych butli; proporcje i szacunki liczą cały skład.
 - Butla źródłowa ma `share` – jaka część jej składu jeszcze w niej została (1 = cała, 0 = pusta), żeby kolejne przelania z tej samej butli nie liczyły się podwójnie.
 
 ## Klony
