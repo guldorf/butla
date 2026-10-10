@@ -16,7 +16,7 @@
 :root{
   --bg:#F4F4F1; --surface:#FEFEFE; --ink:#2B2A29; --muted:#6E6C68; --line:#DCDCD6;
   --glass:#7D8C83; --glass-fill:rgba(125,140,131,.12); --on-ink:#FEFEFE; --warn:#A1361B;
-  --accent:#67B437; --accent-soft:rgba(103,180,55,.45); --on-accent:#2B2A29; --logo-ink:#2B2A29; --logo-white:#FEFEFE; --alarm-bg:#F8E1D8;
+  --accent:#67B437; --accent-soft:rgba(103,180,55,.45); --on-accent:#2B2A29; --logo-ink:#2B2A29; --logo-white:#FEFEFE; --alarm-bg:#F8E1D8; --chart:#4E8F27;
   color-scheme:light; box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
@@ -24,13 +24,13 @@
   :root:not([data-theme="light"]){
     --bg:#1C1C1B; --surface:#262624; --ink:#EFEEEA; --muted:#A6A49F; --line:#3A3A37;
     --glass:#9AAA9F; --glass-fill:rgba(154,170,159,.10); --on-ink:#1C1C1B; --warn:#E59A7C; color-scheme:dark;
-    --accent:#74C443; --accent-soft:rgba(116,196,67,.45); --on-accent:#13200B; --logo-ink:var(--ink); --logo-white:var(--bg); --alarm-bg:#45231A;
+    --accent:#74C443; --accent-soft:rgba(116,196,67,.45); --on-accent:#13200B; --logo-ink:var(--ink); --logo-white:var(--bg); --alarm-bg:#45231A; --chart:#5FA832;
   }
 }
 :root[data-theme="dark"]{
   --bg:#1C1C1B; --surface:#262624; --ink:#EFEEEA; --muted:#A6A49F; --line:#3A3A37;
   --glass:#9AAA9F; --glass-fill:rgba(154,170,159,.10); --on-ink:#1C1C1B; --warn:#E59A7C; color-scheme:dark;
-  --accent:#74C443; --accent-soft:rgba(116,196,67,.45); --on-accent:#13200B; --logo-ink:var(--ink); --logo-white:var(--bg); --alarm-bg:#45231A;
+  --accent:#74C443; --accent-soft:rgba(116,196,67,.45); --on-accent:#13200B; --logo-ink:var(--ink); --logo-white:var(--bg); --alarm-bg:#45231A; --chart:#5FA832;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
@@ -64,6 +64,22 @@ input[type=text],input[type=number],input[type=date],input[type=password],select
 input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(103,180,55,.2)}
 .btn.ghost:hover,.chip:hover,.stepper button:hover{border-color:var(--accent)}
 .ulist li{border-bottom-color:var(--accent-soft)}
+/* pomiary Brix */
+.bxadd{display:grid;grid-template-columns:110px 150px 1fr auto;gap:8px;align-items:center}
+@media (max-width:640px){.bxadd{grid-template-columns:1fr 1fr}.bxadd .btn{grid-column:1/-1}}
+.bxstat{margin:10px 0 0;font-size:14px}
+.bxstat b{font-weight:600}
+.bxstat .ok{color:var(--chart);font-weight:600}
+.bxchart{margin-top:8px}
+.bxchart svg{display:block;width:100%;height:auto;overflow:visible}
+.bxchart .grid{stroke:var(--line);stroke-width:1}
+.bxchart .ax{fill:var(--muted);font-size:11px;font-family:inherit}
+.bxchart .ln{fill:none;stroke:var(--chart);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.bxchart .pt{fill:var(--chart);stroke:var(--surface);stroke-width:2}
+.bxchart .lab{fill:var(--ink);font-size:12px;font-weight:600;font-family:inherit}
+.bxchart .hit{fill:transparent;cursor:default}
+.bxchart .hit:hover+.pt,.bxchart .pt.hl{r:6}
+.bxtip{position:fixed;z-index:40;pointer-events:none;background:var(--ink);color:var(--on-ink);font-size:12px;padding:4px 8px;border-radius:6px;white-space:nowrap}
 .vessel .alarm{margin:0 4px 6px}
 .vessel.fu .alarm{display:none}
 .alarm{margin:14px 0 0;padding:10px 14px;border-radius:10px;font-size:14px;border:1px solid var(--line);background:var(--surface)}
@@ -359,6 +375,7 @@ dialog h3{font-size:17px;margin:18px 0 8px}
               <div class="fields">
                 <div class="field"><label for="fName">Nazwa</label><input type="text" id="fName"></div>
                 <div class="field"><label for="fFruit">Z czego</label><select id="fFruit"></select></div>
+                <div class="field full"><label for="fVessel">Naczynie (np. Weronika, butla M1)</label><input type="text" id="fVessel" placeholder="nazwa naczynia, w którym stoi wino"></div>
                 <div class="field"><label for="fYear">Rocznik</label><input type="number" id="fYear" min="1990" max="2100" step="1"></div>
                 <div class="field"><span class="lab">&nbsp;</span><div class="hint" id="yrHint"></div></div>
                 <div class="field"><label for="fCap">Pojemność naczynia (l)</label><input type="number" id="fCap" min="0.5" step="0.5"></div>
@@ -400,6 +417,19 @@ dialog h3{font-size:17px;margin:18px 0 8px}
                 <div class="field full"><span class="lab">Proporcje nastawu</span><div id="propHint"></div><div class="hint" id="propHint2"></div>
                   <ul class="est-list" id="estList"></ul></div>
               </div>
+            </div>
+
+            <div class="block">
+              <h2>Pomiary (Brix)</h2>
+              <p class="hint" style="margin:0 0 10px">Refraktometr: w trakcie fermentacji alkohol zawyża odczyt – porównuj trend, nie samą wartość. Pomiar dotyczy tylko tej butli (nie przechodzi na klony).</p>
+              <div class="bxadd">
+                <input type="number" id="bxVal" min="0" max="45" step="0.5" placeholder="np. 21,5" aria-label="Odczyt Brix">
+                <input type="date" id="bxDate" aria-label="Data pomiaru">
+                <input type="text" id="bxNote" placeholder="uwaga, np. przed cukrem" aria-label="Uwaga do pomiaru">
+                <button class="btn small" id="bxAdd">Zapisz pomiar</button>
+              </div>
+              <p class="bxstat" id="bxStat"></p>
+              <div class="bxchart" id="bxChart"></div>
             </div>
 
             <div class="block">
@@ -673,7 +703,7 @@ function setYear(y){ try{ localStorage.setItem('butla.year',String(y)); }catch(e
 const visible = () => { const y=selYear(); return y==='all' ? BATCHES : BATCHES.filter(b=>b.year===y); };
 const active = () => { const v=visible(), a=byId(activeId()); return (a&&v.includes(a)) ? a : (v[0]||null); };
 
-const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','sugarKg2','waterL','stage','color','order','col','stageDates','clonedFrom'];
+const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','sugarKg2','waterL','stage','color','order','col','stageDates','clonedFrom','vessel'];
 // pola, które oryginał przekazuje klonom (nazwa, miejsce i kolor zostają własne; fuzja i usuwanie zapisują osobno)
 const SYNC_FIELDS=['year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','sugarKg','sugarKg2','waterL','stage','stageDates'];
 // klony oryginału (także klony klonów); klon sam niczego dalej nie przekazuje
@@ -684,7 +714,7 @@ function clonesOf(b){
 }
 function mk(o){
   return Object.assign({name:'Nowa partia',year:new Date().getFullYear(),fruit:'ciemne',cap:5,vol:4.5,yeast:['uni'],yeastG:5,nutG:0,
-    pulpaL:2,sugarKg:1,sugarKg2:0,waterL:2,stage:0,color:null,clonedFrom:null},o);
+    pulpaL:2,sugarKg:1,sugarKg2:0,waterL:2,stage:0,color:null,clonedFrom:null,vessel:''},o);
 }
 // przyjmuje partię z bazy albo z eksportu (także starszego, z proporcjami w %)
 function normBatch(o){
@@ -713,6 +743,7 @@ function normBatch(o){
   if(!FRUITS[out.fruit]) out.fruit='inne';
   out.yeast=yeastList(out.yeast);
   out.name=String(out.name||'Bez nazwy');
+  out.vessel = typeof out.vessel==='string' ? out.vessel : '';
   out.clonedFrom = typeof out.clonedFrom==='string' && out.clonedFrom ? out.clonedFrom : null;
   { const y=parseInt(b.year!=null?b.year:(b.rocznik!=null?b.rocznik:''),10);
     out.year = y>=1990&&y<=2100 ? y : (tsMs(o.createdAt) ? new Date(tsMs(o.createdAt)).getFullYear() : new Date().getFullYear()); }
@@ -1111,12 +1142,12 @@ function renderForm(){
   const b=active(); if(!b) return;
   const ed=editing();
   const setv=(id,v)=>{ if(id!==ed) $(id).value=v; };
-  setv('fName',b.name); setv('fYear',b.year);
+  setv('fName',b.name); setv('fYear',b.year); setv('fVessel',b.vessel||'');
   { const d0=HIST.filter(h=>h.batchId===b.id).map(h=>h.d).sort()[0]; $('yrHint').textContent=d0?`Pierwszy wpis: ${fmtDate(d0)}`:''; }
   if(ed!=='fFruit') $('fFruit').innerHTML=Object.entries(FRUITS).map(([k,f])=>`<option value="${k}" ${k===b.fruit?'selected':''}>${f.name}</option>`).join('');
   setv('fCap',b.cap); setv('fVol',b.vol); setv('fYeast',b.yeastG); setv('fNut',b.nutG);
   setv('fPulpa',b.pulpaL); setv('fSugar',b.sugarKg); setv('fSugar2',b.sugarKg2); setv('fWater',b.waterL);
-  renderYeast(); renderHints();
+  renderYeast(); renderHints(); renderBrix();
   $('del').disabled=!BATCHES.length;
   { const par=b.clonedFrom&&byId(b.clonedFrom), kids=clonesOf(b);
     $('cloneInfo').innerHTML = b.clonedFrom ? `To klon partii <b>${esc(par?par.name:'(usunięta)')}</b> – jej zmiany przechodzą tutaj.`
@@ -1186,7 +1217,7 @@ function stageEstimate(b,j){
   return [addDays(base,lo),addDays(base,hi)];
 }
 // wpisy zapisywane automatycznie przy zmianie pól i etapów – na osi czasu ich nie pokazujemy (zostają w bazie)
-const AUTO_RE=/^(Partia utworzona|Nazwa: |Owoce: |Rocznik: |Pojemność naczynia: |Wino w naczyniu: |Drożdże|Pożywka: |Owoce \/ pulpa: |Cukier( \((I|II) partia\))?: |Woda: |Etap: |Cofnięto do etapu: |Początek etapu |Sklonowan)/;
+const AUTO_RE=/^(Partia utworzona|Naczynie: |Nazwa: |Owoce: |Rocznik: |Pojemność naczynia: |Wino w naczyniu: |Drożdże|Pożywka: |Owoce \/ pulpa: |Cukier( \((I|II) partia\))?: |Woda: |Etap: |Cofnięto do etapu: |Początek etapu |Sklonowan)/;
 const isNote = h => h.note || h.imp || !AUTO_RE.test(h.t||'');
 // oś czasu: etapy partii, a pod każdym notatki z jego okresu i „+ Dodaj wpis”
 function renderStage(){
@@ -1231,11 +1262,55 @@ function renderStage(){
   const nx=$('next'); nx.disabled=b.stage>=STAGES.length-1; nx.textContent=nx.disabled?'Ostatni etap':'Kolejny etap';
   $('prev').disabled=b.stage===0;
 }
-function renderHistory(){ if(active() && state.mode==='ferm') renderStage(); }
+function renderHistory(){ if(active() && state.mode==='ferm'){ renderStage(); renderBrix(); } }
 function caption(){
-  if(state.mode==='ferm'){ const b=active(); $('vCap').textContent=b?`${b.name}: ${fmt(b.vol)} l z ${fmt(b.cap)} l, ${STAGES[b.stage].name.toLowerCase()}`:''; }
-  else { const I=fusionInfo(); $('vCap').textContent = I ? `${I.t.name}: ${fmt(I.total)} l z ${fmt(I.t.cap)} l po zmieszaniu` : ''; }
+  const nm = b => b.vessel ? `${b.name} (${b.vessel})` : b.name;
+  if(state.mode==='ferm'){ const b=active(); $('vCap').textContent=b?`${nm(b)}: ${fmt(b.vol)} l z ${fmt(b.cap)} l, ${STAGES[b.stage].name.toLowerCase()}`:''; }
+  else { const I=fusionInfo(); $('vCap').textContent = I ? `${nm(I.t)}: ${fmt(I.total)} l z ${fmt(I.t.cap)} l po zmieszaniu` : ''; }
 }
+
+// ---------- pomiary Brix: wpisy historii z polem brix, wykres trendu ----------
+const brixOf = b => HIST.filter(h=>h.batchId===b.id && typeof h.brix==='number')
+  .sort((x,y)=>x.d.localeCompare(y.d) || tsMs(x.ts)-tsMs(y.ts));
+const dayNum = iso => Math.round(new Date(iso+'T12:00').getTime()/864e5);
+function renderBrix(){
+  const b=active(); if(!b) return;
+  if(!$('bxDate').value) $('bxDate').value=today();
+  const M=brixOf(b), st=$('bxStat'), box=$('bxChart');
+  if(!M.length){ st.textContent='Brak pomiarów tej partii.'; box.innerHTML=''; return; }
+  const last=M[M.length-1], prev=M.length>1?M[M.length-2]:null;
+  // „odczyt stoi”: od pomiaru sprzed co najmniej 7 dni wahania mieszczą się w 0,5 Brix
+  let still='';
+  const old=[...M].reverse().find(m=>dayNum(last.d)-dayNum(m.d)>=7);
+  if(old){ const win=M.filter(m=>m.d>=old.d), v=win.map(m=>m.brix);
+    if(Math.max(...v)-Math.min(...v)<=.5) still=` · <span class="ok">odczyt stoi od ${dayNum(last.d)-dayNum(old.d)} dni – czas na zlanie znad osadu</span>`; }
+  const ch = prev ? (()=>{ const d=r2(last.brix-prev.brix), dd=Math.max(1,dayNum(last.d)-dayNum(prev.d));
+    const same=prev.d===last.d; return ` · ${d===0?'bez zmian':(d>0?'+':'−')+fmt(Math.abs(d))} ${same?'względem poprzedniego pomiaru tego dnia':'od '+shortDate(prev.d)}`+(d<0&&!same&&Math.abs(d)/dd>=.05?` (ok. ${fmt(Math.round(Math.abs(d)/dd*10)/10)} na dzień)`:''); })() : '';
+  st.innerHTML=`Ostatni: <b>${fmt(last.brix)} Brix</b> (${shortDate(last.d)})${ch}${still}`;
+  // wykres: oś X w dniach, jedna seria, bez legendy (tytuł sekcji ją nazywa)
+  // rysunek w rzeczywistej szerokości ramki, żeby napisy miały normalny rozmiar
+  const W=Math.max(260,Math.round(box.clientWidth||320)), H=180, L=30, R=40, T=12, Bm=24;
+  const xs=M.map(m=>dayNum(m.d)), x0=Math.min(...xs), x1=Math.max(...xs, x0+1);
+  const vs=M.map(m=>m.brix); let y0=Math.floor(Math.min(...vs)-1), y1=Math.ceil(Math.max(...vs)+1); if(y0<0) y0=0;
+  const X=d=>L+(d-x0)/(x1-x0)*(W-L-R), Y=v=>T+(1-(v-y0)/(y1-y0))*(H-T-Bm);
+  const step=Math.max(1,Math.ceil((y1-y0)/4)); let grid='';
+  for(let v=y0; v<=y1; v+=step) grid+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${L-6}" y="${Y(v)+4}" text-anchor="end">${v}</text>`;
+  const pts=M.map(m=>[X(dayNum(m.d)),Y(m.brix)]);
+  const line=pts.length>1?`<polyline class="ln" points="${pts.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' ')}"/>`:'';
+  const dots=M.map((m,i)=>`<circle class="hit" r="12" cx="${pts[i][0]}" cy="${pts[i][1]}" data-tip="${shortDate(m.d)}: ${fmt(m.brix)} Brix${m.t.includes(' – ')?esc(' – '+m.t.split(' – ').slice(1).join(' – ')):''}"/><circle class="pt" r="4.5" cx="${pts[i][0]}" cy="${pts[i][1]}"/>`).join('');
+  const lp=pts[pts.length-1];
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Pomiary Brix partii ${esc(b.name)}: ${M.map(m=>shortDate(m.d)+' '+fmt(m.brix)).join(', ')}">`+
+    grid+`<text class="ax" x="${L}" y="${H-4}">${shortDate(M[0].d)}</text>`+(M.length>1?`<text class="ax" x="${W-R}" y="${H-4}" text-anchor="end">${shortDate(last.d)}</text>`:'')+
+    line+dots+`<text class="lab" x="${lp[0]+8}" y="${lp[1]+4}">${fmt(last.brix)}</text></svg>`;
+}
+// podpowiedź po najechaniu na punkt wykresu
+(()=>{ let tip=null;
+  $('bxChart').addEventListener('pointerover',e=>{ const t=e.target.dataset&&e.target.dataset.tip; if(!t) return;
+    tip=tip||Object.assign(document.createElement('div'),{className:'bxtip'}); tip.textContent=t; document.body.appendChild(tip);
+    const r=e.target.getBoundingClientRect(); tip.style.left=Math.min(innerWidth-tip.offsetWidth-8,r.left+r.width/2-tip.offsetWidth/2)+'px'; tip.style.top=(r.top-30)+'px'; });
+  $('bxChart').addEventListener('pointerout',e=>{ if(tip && e.target.dataset && e.target.dataset.tip) tip.remove(); });
+  let rt=null; window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(active()) renderBrix(); },150); });
+})();
 
 // fuzja
 function renderFusion(){
@@ -1327,6 +1402,18 @@ $('esNew').onclick=()=>newBatch();
 $('fName').addEventListener('input',e=>{ const b=active();
   logLater(b,'name',(c,was)=>c.name!==was?`Nazwa: „${was}” → „${c.name}”`:null);   // przed zmianą: zapamiętuje starą nazwę
   b.name=e.target.value||'Bez nazwy'; save(b); renderBatches(); caption(); });
+$('fVessel').addEventListener('change',e=>{ const b=active(); const v=e.target.value.trim(); if(v===(b.vessel||'')) return;
+  b.vessel=v; save(b); log(b,`Naczynie: ${v||'(brak)'}`); caption(); });
+// pomiar Brix: wpis historii z polem brix; tylko ta partia (pomiar dotyczy konkretnej butli)
+$('bxAdd').onclick=()=>{
+  const b=active(); if(!b) return;
+  const v=num($('bxVal').value); if(!$('bxVal').value || v<0 || v>45){ $('bxVal').focus(); return; }
+  const d=/^\d{4}-\d{2}-\d{2}$/.test($('bxDate').value)?$('bxDate').value:today(), k=$('bxNote').value.trim();
+  db.collection('history').add(Object.assign(histDoc(b,`Pomiar: ${fmt(v)} Brix`+(k?` – ${k}`:''),d),{brix:r2(v),note:true}))
+    .catch(e=>alert('Nie udało się zapisać pomiaru: '+authMsg(e)));
+  $('bxVal').value=''; $('bxNote').value='';
+};
+['bxVal','bxNote'].forEach(id=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter') $('bxAdd').click(); }));
 $('fFruit').addEventListener('change',e=>{ const b=active(); b.fruit=e.target.value; b.color=null; save(b); log(b,`Owoce: ${FRUITS[b.fruit].name}`); renderBatches(); refresh(); });
 function numField(id,key,min,textFn){
   $(id).addEventListener('input',e=>{ const b=active(); if(!b) return;
