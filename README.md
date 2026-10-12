@@ -9,7 +9,7 @@ Dane trzyma Firebase (Auth + Firestore, projekt `butla-91912`, baza `eur3`), str
 | Kolekcja | Zawartość |
 |---|---|
 | `users/{uid}` | `login`, `name`, `role` (`admin`/`user`), `color` |
-| `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast` (lista rodzajów: `malaga`, `sherry`, `uni`; starsze dane mają jeden napis), `yeastG` (razem), `nutG`, `pulpaL`, `sugarKg` (cukier I partia), `sugarKg2` (cukier II partia), `waterL`, `stage`, `stageDates` (`{nr etapu: RRRR-MM-DD}`), `col` (kolumna 0–4), `order` (pozycja w kolumnie), `color`, `clonedFrom` |
+| `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast` (lista rodzajów: `malaga`, `sherry`, `uni`; starsze dane mają jeden napis), `yeastG` (razem), `nutG`, `pulpaL` (owoce razem), `juice` (0–1: jaka część owoców to sam sok, reszta to pulpa), `sugarKg` (cukier I partia), `sugarKg2` (cukier II partia), `waterL`, `stage`, `stageDates` (`{nr etapu: RRRR-MM-DD}`), `col` (kolumna 0–4), `order` (pozycja w kolumnie), `color`, `clonedFrom` |
 | `history/{id}` | `batchId`, `bn` (nazwa partii), `d` (data `RRRR-MM-DD`), `t` (treść), `ts`, `uid` (kto zapisał), opcjonalnie `au`/`an` (pierwotny autor przy kopiach i dawnym imporcie), `imp`, `note` (notatka dodana na osi czasu). Wpisy automatyczne (zmiany pól i etapów) zostają w bazie, ale oś czasu ich nie pokazuje |
 | `meta/setup` | `adminUid` – znacznik, że konto administratora już istnieje |
 
@@ -48,7 +48,8 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
   Aplikacja alarmuje, gdy nastaw po takim wzroście nie zmieści się w naczyniu, i podaje bezpieczną ilość.
 - **Alkohol** – 17 g cukru na litr ≈ 1% alkoholu; cukier z owoców: winogrona 180–190 g/l, jabłka i inne ok. 100 g/l.
   Wynik jest ograniczony tolerancją drożdży (Malaga ok. 16%, Sherry ok. 17%, uniwersalne ok. 14%), nadmiar cukru zostaje jako słodycz.
-- **Czyste wino** – woda + rozpuszczony cukier + sok z pulpy (60–70% jej objętości), minus ok. 10% na osad.
+- **Pulpa czy sok** – suwak przy owocach. Pulpa daje 60–70% swojej objętości soku i ok. 180–190 g cukru na litr (winogrona), sam sok to cały litr płynu i ok. 200–210 g/l. Sam sok nie robi czapy, więc wzrost w burzliwej liczony jest jako ok. 40% wzrostu na miazdze. Fuzje przenoszą pulpę i sok osobno (`juiceL`).
+- **Czyste wino** – woda + rozpuszczony cukier + sok z pulpy + sam sok, minus ok. 10% na osad.
 - **Etapy** – burzliwa 5–10 dni, cicha 3–6 tygodni, dojrzewanie 3–12 miesięcy; daty kolejnych etapów liczone od ostatniej znanej daty.
 
 ## Pomiary i naczynie
