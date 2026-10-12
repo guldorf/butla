@@ -50,7 +50,7 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
   Wynik jest ograniczony tolerancją drożdży (Malaga ok. 16%, Sherry ok. 17%, uniwersalne ok. 14%), nadmiar cukru zostaje jako słodycz.
 - **Pulpa czy sok** – przełącznik przy owocach; przy soku rysunek pokazuje drobny miąższ: w nastawie i burzliwej cienką warstwą na wierzchu, w cichej jako osad na dnie. Pulpa daje 60–70% swojej objętości soku i ok. 180–190 g cukru na litr (winogrona), sam sok to cały litr płynu i ok. 200–210 g/l. Sam sok nie robi czapy, więc wzrost w burzliwej liczony jest jako ok. 40% wzrostu na miazdze. Fuzje przenoszą pulpę i sok osobno (`juiceL`).
 - **Czyste wino** – woda + rozpuszczony cukier + sok z pulpy + sam sok, minus ok. 10% na osad.
-- **Koło postępu** (prawy górny róg przy butli) – % drogi od nastawu do gotowego wina: burzliwa ~7,5 dnia, cicha ~4,5 tyg., dojrzewanie min. 3 mies.; liczone od ostatniej znanej daty etapu, a gdy etap się przeciąga, koniec przesuwa się od dziś. Pod kołem: ile zostało, w podpowiedzi – szacowana data.
+- **Koło postępu** (prawy górny róg przy butli) – % drogi od nastawu do gotowego wina: burzliwa ~7,5 dnia, cicha ~4,5 tyg., dojrzewanie min. 3 mies.; liczone od ostatniej znanej daty etapu, a gdy etap się przeciąga, koniec przesuwa się od dziś. Pod kołem: ile zostało (w podpowiedzi szacowana data) i ile butelek 0,7 l – od cichej z ilości wina w naczyniu minus ok. 5% osadu, wcześniej z szacunku czystego wina z nastawu.
 - **Etapy** – burzliwa 5–10 dni, cicha 3–6 tygodni, dojrzewanie 3–12 miesięcy; daty kolejnych etapów liczone od ostatniej znanej daty.
 
 ## Pomiary i naczynie
