@@ -183,6 +183,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
 .vessel svg{display:block;width:100%;height:auto;max-height:70vh}
 .vessel .cap{text-align:center;font-size:14px;color:var(--muted);margin:4px 8px 2px}
+/* koło postępu: ile szacunkowo zostało do gotowego wina */
+.vwrap{position:relative}
+.ring{position:absolute;right:1%;top:1%;width:24%;max-width:130px;min-width:76px;text-align:center;line-height:1.2}
+.ring svg{width:100%;height:auto;display:block;overflow:visible}
+.ring #rgArcC{transition:stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)}
+.ring #rgNum{font:500 36px "Jost",system-ui,sans-serif;fill:var(--accent);letter-spacing:-.02em}
+.ring #rgPct text{font:600 11px "Jost",system-ui,sans-serif;fill:#fff}
+.ring small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.vessel.fu .ring{display:none}
 .hidden{display:none!important}
 /* historia */
 .side{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 16px 8px;
@@ -481,30 +490,51 @@ dialog h3{font-size:17px;margin:18px 0 8px}
 
         <div class="vessel" id="vessel">
           <p class="alarm hidden" id="riseAlarm" role="status"></p>
-          <svg viewBox="0 0 440 480" role="img" aria-label="Naczynie z warstwami wina i rurką fermentacyjną">
-            <defs>
-              <clipPath id="bottleClip"><path id="bottleShapeClip"/></clipPath>
-              <clipPath id="chamberClip"><rect x="131" y="15" width="38" height="54" rx="9"/></clipPath>
-              <pattern id="tex" width="16" height="13" patternUnits="userSpaceOnUse">
-                <circle cx="3" cy="3" r="2.6" fill="rgba(0,0,0,.28)"/>
-                <circle cx="11" cy="8" r="3.2" fill="rgba(0,0,0,.2)"/>
-                <ellipse cx="8" cy="2.5" rx="1.4" ry="0.9" fill="rgba(255,235,190,.45)"/>
-                <ellipse cx="14" cy="11.5" rx="1.2" ry="0.8" fill="rgba(255,235,190,.4)"/>
-              </pattern>
-            </defs>
-            <path id="bottleBack" fill="var(--glass-fill)"/>
-            <g clip-path="url(#bottleClip)"><g id="layers"></g><g id="bubbles"></g></g>
-            <path id="bottleFront" fill="none" stroke="var(--glass)" stroke-width="3" stroke-linejoin="round"/>
-            <path d="M62 305 Q56 372 68 432" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="7" stroke-linecap="round"/>
-            <rect x="146" y="56" width="8" height="54" rx="2" fill="var(--glass-fill)" stroke="var(--glass)" stroke-width="1.5"/>
-            <rect x="121" y="104" width="58" height="26" rx="5" fill="#A87C52"/>
-            <rect x="121" y="104" width="58" height="6" rx="3" fill="#C29B70"/>
-            <g clip-path="url(#chamberClip)"><path id="airWater" fill="#9CC4CF" fill-opacity=".75"/><g id="airBubbles"></g></g>
-            <rect x="146" y="40" width="8" height="30" rx="2" fill="none" stroke="var(--glass)" stroke-width="1.2" stroke-opacity=".7"/>
-            <rect x="130" y="14" width="40" height="56" rx="10" fill="none" stroke="var(--glass)" stroke-width="2.5"/>
-            <rect x="136" y="8" width="28" height="8" rx="3" fill="var(--glass)"/>
-            <g id="labels" font-family="Jost, system-ui, sans-serif" font-size="14" fill="var(--ink)"></g>
-          </svg>
+          <div class="vwrap">
+            <div class="ring" id="ring" role="img">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <defs>
+                  <linearGradient id="rgTrack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A4846"/><stop offset=".5" stop-color="#1F1E1D"/><stop offset="1" stop-color="#0E0E0D"/></linearGradient>
+                  <linearGradient id="rgArc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B6E88F"/><stop offset=".45" stop-color="#67B437"/><stop offset="1" stop-color="#3E7A1C"/></linearGradient>
+                  <filter id="rgShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity=".35"/></filter>
+                </defs>
+                <g filter="url(#rgShadow)">
+                  <circle cx="60" cy="60" r="47" fill="none" stroke="url(#rgTrack)" stroke-width="13"/>
+                  <circle id="rgArcC" cx="60" cy="60" r="47" fill="none" stroke="url(#rgArc)" stroke-width="13" transform="rotate(-90 60 60)" pathLength="100" stroke-dasharray="0 100"/>
+                  <!-- połysk rury -->
+                  <circle cx="60" cy="60" r="51" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="2"/>
+                  <circle cx="60" cy="60" r="43.5" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="1.5"/>
+                </g>
+                <text id="rgNum" x="57" y="70" text-anchor="middle">0</text>
+                <g id="rgPct"><circle r="9" fill="#1F1E1D"/><text y="4" text-anchor="middle">%</text></g>
+              </svg>
+              <small id="rgLeft"></small>
+            </div>
+            <svg viewBox="0 0 440 480" role="img" aria-label="Naczynie z warstwami wina i rurką fermentacyjną">
+              <defs>
+                <clipPath id="bottleClip"><path id="bottleShapeClip"/></clipPath>
+                <clipPath id="chamberClip"><rect x="131" y="15" width="38" height="54" rx="9"/></clipPath>
+                <pattern id="tex" width="16" height="13" patternUnits="userSpaceOnUse">
+                  <circle cx="3" cy="3" r="2.6" fill="rgba(0,0,0,.28)"/>
+                  <circle cx="11" cy="8" r="3.2" fill="rgba(0,0,0,.2)"/>
+                  <ellipse cx="8" cy="2.5" rx="1.4" ry="0.9" fill="rgba(255,235,190,.45)"/>
+                  <ellipse cx="14" cy="11.5" rx="1.2" ry="0.8" fill="rgba(255,235,190,.4)"/>
+                </pattern>
+              </defs>
+              <path id="bottleBack" fill="var(--glass-fill)"/>
+              <g clip-path="url(#bottleClip)"><g id="layers"></g><g id="bubbles"></g></g>
+              <path id="bottleFront" fill="none" stroke="var(--glass)" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M62 305 Q56 372 68 432" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="7" stroke-linecap="round"/>
+              <rect x="146" y="56" width="8" height="54" rx="2" fill="var(--glass-fill)" stroke="var(--glass)" stroke-width="1.5"/>
+              <rect x="121" y="104" width="58" height="26" rx="5" fill="#A87C52"/>
+              <rect x="121" y="104" width="58" height="6" rx="3" fill="#C29B70"/>
+              <g clip-path="url(#chamberClip)"><path id="airWater" fill="#9CC4CF" fill-opacity=".75"/><g id="airBubbles"></g></g>
+              <rect x="146" y="40" width="8" height="30" rx="2" fill="none" stroke="var(--glass)" stroke-width="1.2" stroke-opacity=".7"/>
+              <rect x="130" y="14" width="40" height="56" rx="10" fill="none" stroke="var(--glass)" stroke-width="2.5"/>
+              <rect x="136" y="8" width="28" height="8" rx="3" fill="var(--glass)"/>
+              <g id="labels" font-family="Jost, system-ui, sans-serif" font-size="14" fill="var(--ink)"></g>
+            </svg>
+          </div>
           <p class="cap" id="vCap"></p>
         </div>
       </div>
@@ -1257,6 +1287,38 @@ function stageDate(b,i){
   return null;
 }
 // szacowany początek etapu j (od-do), liczony od ostatniego znanego etapu
+// koło postępu: od nastawu do „gotowego” (typowe czasy etapów; dojrzewanie min. 3 mies.)
+const READY_DAYS = STAGE_DAYS.map(([lo,hi],i)=> i<STAGE_DAYS.length-1 ? (lo+hi)/2 : lo);
+const dayDiff=(a,b)=>Math.round((new Date(b+'T12:00')-new Date(a+'T12:00'))/864e5);
+function progress(b){
+  const start=stageDate(b,0) || (tsMs(b.createdAt)?isoOf(new Date(tsMs(b.createdAt))):today());
+  let k=b.stage; while(k>0 && !stageDate(b,k)) k--;
+  const base=stageDate(b,k)||start, t=today();
+  let ready=addDays(base, Math.round(READY_DAYS.slice(k).reduce((x,y)=>x+y,0)));
+  // etap trwa dłużej niż zwykle – przesuń koniec od dziś o pozostałe etapy
+  if(dayDiff(t,ready)<0 && b.stage<STAGES.length-1) ready=addDays(t, Math.round(READY_DAYS.slice(b.stage+1).reduce((x,y)=>x+y,0)));
+  const total=Math.max(1,dayDiff(start,ready)), done=dayDiff(start,t);
+  return {pct:Math.max(0,Math.min(100,Math.round(done/total*100))), left:Math.max(0,dayDiff(t,ready)), ready};
+}
+function leftWords(n){
+  if(n<=0) return 'gotowe do picia';
+  if(n<14) return `zostało ok. ${n} ${n===1?'dzień':'dni'}`;
+  if(n<60) return `zostało ok. ${Math.round(n/7)} tyg.`;
+  return `zostało ok. ${Math.round(n/30)} mies.`;
+}
+function renderRing(b){
+  const box=$('ring'); if(!box) return;
+  if(!b){ box.classList.add('hidden'); return; } box.classList.remove('hidden');
+  const P=progress(b);
+  $('rgArcC').setAttribute('stroke-dasharray',`${P.pct} ${100-P.pct}`);
+  $('rgNum').textContent=P.pct;
+  // kulka z „%” przy prawym dolnym rogu liczby
+  const w=$('rgNum').getComputedTextLength?$('rgNum').getComputedTextLength():40;
+  $('rgPct').setAttribute('transform',`translate(${57+w/2+5},${70-4})`);
+  $('rgLeft').textContent=leftWords(P.left);
+  box.title=`Szacunek: wino gotowe ok. ${fmtDate(P.ready)} (min. 3 mies. dojrzewania)`;
+  box.setAttribute('aria-label',`Postęp ${P.pct}%, ${leftWords(P.left)}`);
+}
 function stageEstimate(b,j){
   let k=b.stage; while(k>0 && !stageDate(b,k)) k--;
   const base=stageDate(b,k); if(!base) return null;
@@ -1398,7 +1460,7 @@ function fusionStatus(){
 
 function refresh(){
   if(!active()){ setTarget({air:0,liq:0,layers:[]}); caption(); return; }
-  if(state.mode==='ferm'){ renderStage(); setTarget(fermTargets(active())); }
+  if(state.mode==='ferm'){ renderStage(); setTarget(fermTargets(active())); renderRing(active()); }
   else { renderFusion(); setTarget(fusionTargets()); }
   caption();
 }
