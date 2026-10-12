@@ -191,7 +191,28 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .ring #rgNum{font:500 36px "Jost",system-ui,sans-serif;fill:var(--accent);letter-spacing:-.02em}
 .ring #rgPct text{font:600 11px "Jost",system-ui,sans-serif;fill:#fff}
 .ring small{display:block;font-size:13.8px;color:var(--muted);margin-top:2px}
-.vessel.fu .ring{display:none}
+.vessel.fu .ring,.vessel.fu .ringPop{display:none}
+.ring{cursor:zoom-in}
+/* powiększone koło z kamieniami milowymi – na całą ramkę z butlą */
+.ringPop{position:absolute;inset:0;z-index:6;background:var(--surface);border-radius:12px;display:grid;place-items:center;
+  transform-origin:top right;animation:ringGrow .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes ringGrow{from{transform:scale(.25);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.ringPop{animation:none}}
+.ringPop svg{width:100%;height:100%;max-height:100%;display:block}
+.ringPop .ms-lab{font:500 15px "Jost",system-ui,sans-serif;fill:var(--ink)}
+.ringPop .ms-lab .dt{font-weight:600;fill:var(--accent)}
+.ringPop .ms-lab.done{fill:var(--muted)} .ringPop .ms-lab.done .dt{fill:var(--muted)}
+.ringPop .ms-line{stroke:var(--muted);stroke-width:1;fill:none;opacity:.6}
+.ringPop .ms-dot{stroke:var(--surface);stroke-width:2.5;cursor:pointer}
+.ringPop .ms-hit{fill:transparent;cursor:pointer}
+.ringPop .ms-next{fill:none;stroke:var(--accent);stroke-width:2;animation:msPulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes msPulse{from{transform:scale(1);opacity:.9}to{transform:scale(2.2);opacity:0}}
+@media (prefers-reduced-motion:reduce){.ringPop .ms-next{animation:none}}
+.ringPop .c-big{font:500 76px "Jost",system-ui,sans-serif;fill:var(--accent)}
+.ringPop .c-sm{font:400 15px "Jost",system-ui,sans-serif;fill:var(--muted)}
+.ringPop .c-t{font:600 18px "Jost",system-ui,sans-serif;fill:var(--ink)}
+.ringPop .c-a{font:400 15px "Jost",system-ui,sans-serif;fill:var(--ink)}
+.ringPop .x{position:absolute;top:8px;right:10px;border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
 .ring.via svg{opacity:.75}
 .ring small b{color:var(--ink);font-weight:600}
 .ring .rgb{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:16px;font-weight:600;color:var(--ink);white-space:nowrap}
@@ -495,7 +516,8 @@ dialog h3{font-size:17px;margin:18px 0 8px}
         <div class="vessel" id="vessel">
           <p class="alarm hidden" id="riseAlarm" role="status"></p>
           <div class="vwrap">
-            <div class="ring" id="ring" role="img">
+            <div class="ringPop hidden" id="ringPop" role="dialog" aria-label="Kamienie milowe wina"></div>
+            <div class="ring" id="ring" role="button" tabindex="0" aria-haspopup="dialog">
               <svg viewBox="0 0 120 120" aria-hidden="true">
                 <defs>
                   <linearGradient id="rgTrack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A4846"/><stop offset=".5" stop-color="#1F1E1D"/><stop offset="1" stop-color="#0E0E0D"/></linearGradient>
@@ -1317,9 +1339,11 @@ function renderRing(b){
   // pusta butla (przelana w fuzji): koło partii, do której trafiło wino; bez takiej partii – bez koła
   const empty = b.share===0 || !(b.vol>0);
   const dest = empty ? [...BATCHES].reverse().find(x=>x.id!==b.id && (x.fusions||[]).some(f=>f.id===b.id)) : null;
-  if(empty && !dest){ box.classList.add('hidden'); return; }
+  if(empty && !dest){ box.classList.add('hidden'); closeRingPop(); return; }
   box.classList.remove('hidden'); box.classList.toggle('via',!!dest);
   if(dest) b=dest;
+  box.dataset.bid=b.id;
+  if(popBatch && popBatch.id!==b.id) closeRingPop(); else if(popBatch){ popBatch=b; renderRingPop(); }
   const P=progress(b);
   $('rgArcC').setAttribute('stroke-dasharray',`${P.pct} ${100-P.pct}`);
   $('rgNum').textContent=P.pct;
@@ -1336,6 +1360,97 @@ function renderRing(b){
   box.title=(dest?`Wino z tej butli jest w partii ${dest.name}. `:'')+`Szacunek: wino gotowe ok. ${fmtDate(P.ready)} (min. 3 mies. dojrzewania)`;
   box.setAttribute('aria-label',`Postęp ${P.pct}%, ${leftWords(P.left)}, ok. ${nb} butelek po 0,7 l`);
 }
+// początki etapów: zapisane daty, brakujące – z typowych czasów; przeterminowane przyszłe etapy przesuwają się od dziś
+function stageStarts(b){
+  const t=today(), st=[];
+  st[0]=stageDate(b,0) || (tsMs(b.createdAt)?isoOf(new Date(tsMs(b.createdAt))):t);
+  for(let i=1;i<STAGES.length;i++){
+    const known = i<=b.stage ? stageDate(b,i) : null;
+    let d = known || addDays(st[i-1], Math.round(READY_DAYS[i-1]));
+    if(!known && i>b.stage && dayDiff(t,d)<0) d=t;
+    st[i]=d;
+  }
+  return st;
+}
+// kamienie milowe: co i kiedy zrobić z winem (+ plany z osi czasu)
+function milestones(b){
+  const st=stageStarts(b), ready=addDays(st[3],READY_DAYS[3]), pulp=!b.juice;
+  const E=estimate(b), L=b.stage>=2&&b.vol>0 ? b.vol*.95 : E.clear, nb=Math.floor(L/0.7+1e-6);
+  const M=[
+    {d:st[0], t:'Nastaw', a: pulp ? 'Miazga, woda i cukier z drożdżami i pożywką. Zostaw 10–20% miejsca na pianę.' : 'Sok i cukier z drożdżami i pożywką. Zostaw ok. 10% miejsca na pianę.'},
+    {d:st[1], t:'Burzliwa', a: pulp ? 'Zanurzaj czapę 1–2 razy dziennie i pilnuj, czy nie kipi.' : 'Nie mieszaj, pilnuj piany. Drobny miąższ pływa na wierzchu.'},
+    {d:st[2], t: pulp?'Odcedzenie':'Przelanie', a: pulp ? 'Odcedź pulpę, przelej do czystej butli pod szyjkę i załóż rurkę.' : 'Zlej znad osadu do czystej butli pod szyjkę i załóż rurkę.'},
+    {d:addDays(st[2],21), t:'1. zlanie', a:'Zlej wężykiem znad osadu i dolej pod szyjkę. Zmierz Brix.'},
+    {d:st[3], t:'Koniec fermentacji', a:'Brix stoi od tygodnia: zlej znad osadu. Teraz ewentualnie dosładzanie i klarowanie.'},
+    {d:addDays(st[3],45), t:'2. zlanie', a:'Zlej znad osadu, jeśli na dnie zebrała się warstwa.'},
+    {d:ready, t:'Butelkowanie', a:`Wino klarowne i stabilne – rozlej do butelek 0,7 l (ok. ${nb} szt.).`},
+  ];
+  HIST.filter(h=>h.batchId===b.id && isNote(h) && !('brix' in h) && h.d>today()).forEach(h=>M.push({d:h.d, t:'Plan', a:h.t, plan:true}));
+  M.sort((x,y)=>x.d.localeCompare(y.d));
+  return {M, start:st[0], ready};
+}
+// tekst w kilku liniach do SVG
+function wrapLines(txt,max){ const out=[]; let line=''; String(txt).split(/\s+/).forEach(w=>{ if((line+' '+w).trim().length>max && line){ out.push(line); line=w; } else line=(line+' '+w).trim(); }); if(line) out.push(line); return out; }
+let popBatch=null, popPin=null;
+function renderRingPop(){
+  const pop=$('ringPop'), b=popBatch; if(!b||pop.classList.contains('hidden')) return;
+  const {M,start,ready}=milestones(b), t=today(), P=progress(b);
+  const span=Math.max(1,dayDiff(start,ready)), C=320, R=170, MAXA=342, MIN=21;
+  const frac=d=>Math.max(0,Math.min(1,dayDiff(start,d)/span));
+  // kąty znaczników (od góry, zgodnie z zegarem) i rozsunięte kąty etykiet
+  const A=M.map(m=>frac(m.d)*MAXA), LA=A.slice();
+  for(let i=1;i<LA.length;i++) if(LA[i]-LA[i-1]<MIN) LA[i]=LA[i-1]+MIN;
+  for(let i=LA.length-1;i>=0;i--){ const lim=i===LA.length-1?MAXA+8:LA[i+1]-MIN; if(LA[i]>lim) LA[i]=lim; }
+  const pt=(a,r)=>{ const q=(a-90)*Math.PI/180; return [C+r*Math.cos(q), C+r*Math.sin(q)]; };
+  const nextI=M.findIndex(m=>m.d>=t);
+  let marks='', labs='';
+  M.forEach((m,i)=>{
+    const done=m.d<t, [x,y]=pt(A[i],R), [lx,ly]=pt(LA[i],R+44), [ex,ey]=pt(LA[i],R+30);
+    const right=Math.sin(LA[i]*Math.PI/180)>=-0.05, anchor=Math.abs(Math.sin(LA[i]*Math.PI/180))<0.25?'middle':right?'start':'end';
+    const fill=done?'var(--accent)':m.plan?'#C69A3A':'#2B2A29';
+    labs+=`<polyline class="ms-line" points="${x.toFixed(1)},${y.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}"/>`+
+      `<text class="ms-lab${done?' done':''}" x="${lx.toFixed(1)}" y="${(ly-2).toFixed(1)}" text-anchor="${anchor}"><tspan class="dt">${shortDate(m.d)}</tspan><tspan x="${lx.toFixed(1)}" dy="17">${esc(m.t)}</tspan></text>`;
+    marks+=(i===nextI?`<circle class="ms-next" cx="${x}" cy="${y}" r="9"/>`:'')+
+      `<circle class="ms-dot" cx="${x}" cy="${y}" r="${i===nextI?10:8}" fill="${fill}"/>`+
+      `<circle class="ms-hit" data-i="${i}" cx="${x}" cy="${y}" r="20"><title>${shortDate(m.d)} – ${esc(m.t)}: ${esc(m.a)}</title></circle>`;
+  });
+  // środek: domyślnie procent i najbliższe zadanie, po najechaniu na znacznik – szczegóły
+  const show = popPin!=null ? M[popPin] : null;
+  let center='';
+  if(show){
+    const ls=wrapLines(show.a,30);
+    center=`<text class="c-sm" x="${C}" y="${C-28-ls.length*9}" text-anchor="middle">${fmtDate(show.d)}${show.d<t?' · zrobione':show.d===t?' · dziś':''}</text>`+
+      `<text class="c-t" x="${C}" y="${C-4-ls.length*9}" text-anchor="middle">${esc(show.t)}</text>`+
+      ls.map((l,k)=>`<text class="c-a" x="${C}" y="${C+22-ls.length*9+k*20}" text-anchor="middle">${esc(l)}</text>`).join('');
+  } else {
+    const nx=M[nextI];
+    center=`<text class="c-big" x="${C}" y="${C+8}" text-anchor="middle">${P.pct}%</text>`+
+      `<text class="c-sm" x="${C}" y="${C+38}" text-anchor="middle">${leftWords(P.left)}</text>`+
+      (nx?`<text class="c-sm" x="${C}" y="${C+68}" text-anchor="middle">Następnie: <tspan style="fill:var(--ink);font-weight:600">${shortDate(nx.d)} – ${esc(nx.t)}</tspan></text>`:'');
+  }
+  pop.innerHTML=`<button type="button" class="x" aria-label="Zamknij">×</button>
+  <svg viewBox="0 0 ${2*C} ${2*C}" role="img" aria-label="Postęp ${P.pct}%. ${M.map(m=>shortDate(m.d)+' '+m.t).join(', ')}">
+    <g filter="url(#rgShadow)">
+      <circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="url(#rgTrack)" stroke-width="30"/>
+      <circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="url(#rgArc)" stroke-width="30" transform="rotate(-90 ${C} ${C})" pathLength="100" stroke-dasharray="${P.pct} ${100-P.pct}"/>
+      <circle cx="${C}" cy="${C}" r="${R+12}" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="3"/>
+    </g>${labs}${marks}${center}</svg>`;
+}
+function openRingPop(){
+  const b=$('ring').dataset.bid&&byId($('ring').dataset.bid); if(!b) return;
+  popBatch=b; popPin=null; $('ringPop').classList.remove('hidden'); renderRingPop();
+}
+function closeRingPop(){ $('ringPop').classList.add('hidden'); popBatch=null; popPin=null; }
+$('ring').addEventListener('mouseenter',openRingPop);
+$('ring').addEventListener('click',openRingPop);
+$('ring').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openRingPop(); } });
+$('ringPop').addEventListener('mouseleave',e=>{ if(e.pointerType!=='touch') closeRingPop(); });
+$('ringPop').addEventListener('mouseover',e=>{ const h=e.target.closest('.ms-hit'); const i=h?+h.dataset.i:null; if(i!==popPin && (h||popPin!=null)){ popPin=i; renderRingPop(); } });
+$('ringPop').addEventListener('click',e=>{
+  if(e.target.closest('.x')){ closeRingPop(); return; }
+  const h=e.target.closest('.ms-hit'); popPin = h ? +h.dataset.i : null; renderRingPop();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !$('ringPop').classList.contains('hidden')) closeRingPop(); });
 function stageEstimate(b,j){
   let k=b.stage; while(k>0 && !stageDate(b,k)) k--;
   const base=stageDate(b,k); if(!base) return null;
