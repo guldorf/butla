@@ -192,6 +192,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .ring #rgPct text{font:600 11px "Jost",system-ui,sans-serif;fill:#fff}
 .ring small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 .vessel.fu .ring{display:none}
+.ring.via svg{opacity:.75}
+.ring small b{color:var(--ink);font-weight:600}
 .ring .rgb{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap}
 .ring .rgb svg{width:auto;height:22px;display:inline-block}
 .hidden{display:none!important}
@@ -1311,7 +1313,13 @@ function leftWords(n){
 }
 function renderRing(b){
   const box=$('ring'); if(!box) return;
-  if(!b){ box.classList.add('hidden'); return; } box.classList.remove('hidden');
+  if(!b){ box.classList.add('hidden'); return; }
+  // pusta butla (przelana w fuzji): koło partii, do której trafiło wino; bez takiej partii – bez koła
+  const empty = b.share===0 || !(b.vol>0);
+  const dest = empty ? [...BATCHES].reverse().find(x=>x.id!==b.id && (x.fusions||[]).some(f=>f.id===b.id)) : null;
+  if(empty && !dest){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden'); box.classList.toggle('via',!!dest);
+  if(dest) b=dest;
   const P=progress(b);
   $('rgArcC').setAttribute('stroke-dasharray',`${P.pct} ${100-P.pct}`);
   $('rgNum').textContent=P.pct;
@@ -1321,9 +1329,11 @@ function renderRing(b){
   $('rgLeft').textContent=leftWords(P.left);
   // butelki 0,7 l: po odcedzeniu z ilości wina w naczyniu (minus ok. 5% osadu), wcześniej z szacunku nastawu
   const E=estimate(b), L=b.stage>=2&&b.vol>0 ? b.vol*.95 : E.clear, nb=Math.floor(L/0.7+1e-6);
-  $('rgBottles').innerHTML=`<svg viewBox="8 0 16 32" aria-hidden="true"><path d="M13 1h6v9c0 2 4 3 4 7v12c0 1.5-1 2-2 2H11c-1 0-2-.5-2-2V17c0-4 4-5 4-7z" fill="var(--logo-ink)"/><rect x="10.5" y="18" width="11" height="8" fill="var(--accent)"/></svg>${L<0.1?'pusta':`× ${nb} szt.`}`;
+  const destName = dest ? esc(dest.name)+(dest.vessel?` (${esc(dest.vessel)})`:'') : '';
+  $('rgBottles').innerHTML=`<svg viewBox="8 0 16 32" aria-hidden="true"><path d="M13 1h6v9c0 2 4 3 4 7v12c0 1.5-1 2-2 2H11c-1 0-2-.5-2-2V17c0-4 4-5 4-7z" fill="var(--logo-ink)"/><rect x="10.5" y="18" width="11" height="8" fill="var(--accent)"/></svg>${dest?`× ${nb} szt. razem`:`× ${nb} szt.`}`;
+  if(dest) $('rgLeft').innerHTML=`przelane do <b>${destName}</b><br>${leftWords(P.left)}`;
   $('rgBottles').title=`ok. ${fmt(Math.round(L*10)/10)} l czystego wina = ${nb} butelek po 0,7 l`;
-  box.title=`Szacunek: wino gotowe ok. ${fmtDate(P.ready)} (min. 3 mies. dojrzewania)`;
+  box.title=(dest?`Wino z tej butli jest w partii ${dest.name}. `:'')+`Szacunek: wino gotowe ok. ${fmtDate(P.ready)} (min. 3 mies. dojrzewania)`;
   box.setAttribute('aria-label',`Postęp ${P.pct}%, ${leftWords(P.left)}, ok. ${nb} butelek po 0,7 l`);
 }
 function stageEstimate(b,j){
