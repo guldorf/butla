@@ -634,8 +634,8 @@ const FRUITS = {
   porzeczki: {name:'Czarne porzeczki', color:'#40102A', pulp:'#26061A', sug:70, jsug:80,  juice:.6},
   inne:      {name:'Inne owoce',       color:'#9A3A4A', pulp:'#5A2030', sug:100, jsug:110, juice:.6},
 };
-const YEASTS = {malaga:'Malaga 1', sherry:'Sherry', uni:'Uniwersalne'};
-const YEAST_ABV = {malaga:16, sherry:17, uni:14};     // ile % alkoholu drożdże zwykle udźwigną
+const YEASTS = {malaga:'Malaga 1', sherry:'Sherry', stg:'STG S101', uni:'Uniwersalne'};
+const YEAST_ABV = {malaga:16, sherry:17, stg:14, uni:14};     // ile % alkoholu drożdże zwykle udźwigną (STG S101 / Saint Georges S101: sklepy podają 13–15%)
 // partia może mieć kilka rodzajów drożdży naraz (b.yeast = lista kluczy); starsze dane mają jeden klucz
 const yeastList = y => { const a=Array.isArray(y)?y:[y], l=Object.keys(YEASTS).filter(k=>a.includes(k)); return l.length ? l : ['uni']; };
 const yeastNames = b => yeastList(b.yeast).map(k=>YEASTS[k]).join(' + ');
