@@ -134,9 +134,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .batches .chip small{margin-left:auto;padding-left:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .batches .chip.add{justify-content:center;margin-top:8px}
 /* wąski pasek postępu pod nazwą partii */
-.batches .chip .pb{flex:0 0 100%;height:3px;margin-top:6px;border-radius:2px;background:var(--line);overflow:hidden}
+.batches .chip .pbw{flex:0 0 100%;display:flex;align-items:center;gap:6px;margin-top:4px}
+.batches .chip .pb{flex:1 1 auto;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
 .batches .chip .pb i{display:block;height:100%;border-radius:2px;background:var(--accent)}
-.batches .chip .pb.via i{background:var(--accent-soft)}
+.batches .chip .pbw.via .pb i{background:var(--accent-soft)}
+.batches .chip .pp{font-size:11px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1;min-width:3ch;text-align:right}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 15px 8px 10px;border-radius:999px;
   border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
 .chip .sw{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
@@ -1184,7 +1186,7 @@ function renderBatches(){
       // wąski pasek postępu pod nazwą (jak koło przy butli; pusta butla – postęp wina, do którego ją przelano)
       const empty=b.share===0 || !(b.vol>0), dest=empty ? [...BATCHES].reverse().find(x=>x.id!==b.id && (x.fusions||[]).some(f=>f.id===b.id)) : null;
       const P=(!empty||dest) ? progress(dest||b) : null;
-      const bar=P ? `<span class="pb${dest?' via':''}" aria-hidden="true"><i style="width:${P.pct}%"></i></span>` : '';
+      const bar=P ? `<span class="pbw${dest?' via':''}" aria-hidden="true"><span class="pb"><i style="width:${P.pct}%"></i></span><b class="pp">${P.pct}%</b></span>` : '';
       const c=chip(`<span class="nm">${esc(b.name)}</span><small>${sy==='all'?b.year+' · ':''}${fmt(b.vol)}/${fmt(b.cap)} l</small>${bar}`,batchColor(b),a&&b.id===a.id,()=>{ setActive(b.id); renderAll(); });
       c.dataset.id=b.id; c.title=`${b.name}`+(P?` – postęp ${P.pct}%${dest?` (w partii ${dest.name})`:''}, ${leftWords(P.left)}`:'')+` – przeciągnij, żeby przenieść`; col.appendChild(c);
     });
