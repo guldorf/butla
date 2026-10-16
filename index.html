@@ -44,6 +44,16 @@ h1,h2,h3{font-family:"Jost",system-ui,sans-serif;font-weight:300;letter-spacing:
 header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 12px;
   border-bottom:2px solid var(--accent-soft);padding-bottom:10px}
 header h1{line-height:1;margin:0}
+/* nadchodzące wydarzenia na środku paska */
+.upc{flex:1 1 300px;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 8px;min-width:0}
+.upc:empty{display:none}
+.upc .ev{appearance:none;font:inherit;font-size:13px;display:inline-flex;align-items:baseline;gap:6px;max-width:100%;min-width:0;padding:5px 12px;border-radius:999px;border:1.5px solid var(--accent-soft);background:var(--surface);color:var(--ink);cursor:pointer}
+.upc .ev:hover{border-color:var(--accent)}
+.upc .ev b{font-weight:600;white-space:nowrap}
+.upc .ev span{white-space:nowrap}
+.upc .ev .w{color:var(--muted);overflow:hidden;text-overflow:ellipsis;max-width:20ch}
+.upc .ev.today{border-color:var(--accent);background:rgba(103,180,55,.14)}
+@media (max-width:760px){.upc{order:3;flex-basis:100%}}
 .logo{display:flex;margin:0}
 .logo svg{height:clamp(54px,6vw,68px);width:auto;display:block}
 header .logo svg{transition:opacity .3s}
@@ -367,6 +377,7 @@ dialog h3{font-size:17px;margin:18px 0 8px}
     <div class="brand">
       <h1 class="logo"><svg viewBox="0 0 191 124" role="img" aria-label="Si qu’a la font"><use href="#logoSym"/></svg><span class="sr">Butla</span></h1>
     </div>
+    <nav class="upc" id="upcoming" aria-label="Nadchodzące wydarzenia"></nav>
     <div class="io">
       <details class="snd" id="sndMenu">
         <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path class="w" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Dźwięk</summary>
@@ -1159,7 +1170,7 @@ function renderYears(){
   if(ys.length>1) mkY('all','Wszystkie',BATCHES.length);
 }
 function renderBatches(){
-  renderYears();
+  renderYears(); renderUpcoming();
   const box=$('batches'); box.innerHTML='';
   const a=active(), sy=selYear();
   const grid=document.createElement('div'); grid.className='bgrid';
@@ -1389,6 +1400,41 @@ function milestones(b){
   M.sort((x,y)=>x.d.localeCompare(y.d));
   return {M, start:st[0], ready};
 }
+// ---------- nadchodzące wydarzenia na środku górnego paska ----------
+// kamienie milowe wszystkich win + plany z osi czasu; plan użytkownika wygrywa z szacunkiem (jak w kalendarzu .ics)
+const DSHORT=['nd','pn','wt','śr','cz','pt','sb'];
+const planTitle=t=>/pomiar brix/i.test(t)?'Pomiar Brix':/zlanie/i.test(t)?'Zlanie':/odcedzi/i.test(t)?'Odcedzenie':/cukr/i.test(t)?'Cukier':'Plan';
+function upcoming(){
+  const t=today(), G={};
+  BATCHES.filter(b=>b.vol>0 && b.share!==0).forEach(b=>{
+    const {M}=milestones(b), plans=M.filter(m=>m.plan);
+    const rack=plans.some(p=>/zlanie/i.test(p.a)), strain=plans.some(p=>/odcedzi/i.test(p.a));
+    M.forEach(m=>{
+      if(m.d<t || (!m.plan && m.t==='Nastaw')) return;
+      if(!m.plan && ((rack && m.t==='1. zlanie') || (strain && /^(Odcedzenie|Przelanie)$/.test(m.t)))) return;
+      // etap, który już powinien trwać (szacunek przesunięty na dziś) – podpowiedź, żeby przestawić go w Butli
+      const idx={Burzliwa:1, Odcedzenie:2, Przelanie:2}[m.t], late=!m.plan && m.d===t && idx!=null && b.stage<idx;
+      const a=m.a.replace(/^Plan:\s*/,''), title=(m.plan?planTitle(a):m.t)+(late?' (przestaw etap)':''), k=m.d+'|'+title;
+      const g=G[k]||(G[k]={d:m.d,t:title,ids:[],names:[],a:[]});
+      const nm=b.name.replace(/ #\d+$/,''); if(!g.names.includes(nm)) g.names.push(nm);
+      g.ids.push(b.id); if(!g.a.includes(a)) g.a.push(a);
+    });
+  });
+  return Object.values(G).sort((x,y)=>x.d.localeCompare(y.d)||x.t.localeCompare(y.t));
+}
+function renderUpcoming(){
+  const box=$('upcoming'); if(!box) return;
+  const t=today(), L=upcoming().slice(0,3);
+  const when=d=>{ const n=dayDiff(t,d); return n===0?'dziś':n===1?'jutro':`${DSHORT[new Date(d+'T12:00').getDay()]} ${shortDate(d)}`; };
+  box.innerHTML=L.map(g=>`<button type="button" class="ev${g.d===t?' today':''}" data-bid="${g.ids[0]}" title="${esc(`${fmtDate(g.d)} – ${g.t}: ${g.names.join(', ')}\n${g.a.join('\n')}`)}">`+
+    `<b>${when(g.d)}</b><span>${esc(g.t)}</span><span class="w">${esc(g.names.join(', '))}</span></button>`).join('');
+}
+// klik w wydarzenie otwiera to wino
+$('upcoming').addEventListener('click',e=>{
+  const ev=e.target.closest('.ev'); if(!ev) return; const b=byId(ev.dataset.bid); if(!b) return;
+  if(selYear()!=='all' && selYear()!==b.year) setYear(b.year);
+  setActive(b.id); renderAll();
+});
 // tekst w kilku liniach do SVG
 function wrapLines(txt,max){ const out=[]; let line=''; String(txt).split(/\s+/).forEach(w=>{ if((line+' '+w).trim().length>max && line){ out.push(line); line=w; } else line=(line+' '+w).trim(); }); if(line) out.push(line); return out; }
 let popBatch=null, popPin=null;
@@ -1503,7 +1549,7 @@ function renderStage(){
   const nx=$('next'); nx.disabled=b.stage>=STAGES.length-1; nx.textContent=nx.disabled?'Ostatni etap':'Kolejny etap';
   $('prev').disabled=b.stage===0;
 }
-function renderHistory(){ if(active() && state.mode==='ferm'){ renderStage(); renderBrix(); } }
+function renderHistory(){ renderUpcoming(); if(active() && state.mode==='ferm'){ renderStage(); renderBrix(); } }
 function caption(){
   const nm = b => b.vessel ? `${b.name} (${b.vessel})` : b.name;
   if(state.mode==='ferm'){ const b=active(); $('vCap').textContent=b?`${nm(b)}: ${fmt(b.vol)} l z ${fmt(b.cap)} l, ${STAGES[b.stage].name.toLowerCase()}`:''; }

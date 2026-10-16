@@ -68,6 +68,10 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
 - Klon pamięta oryginał (`clonedFrom`). Zmiany w oryginale – rocznik, owoce, pojemność, ilość wina, drożdże, pożywka, pulpa, cukier, woda, etap i daty etapów – przechodzą od razu na wszystkie jego klony. Nowa notatka w oryginale trafia też do klonów (pole `src` wskazuje wpis źródłowy, więc zmiana daty idzie za nią).
 - Nie przechodzą: nazwa, miejsce w kolumnach, kolor, usunięcie partii lub wpisu oraz fuzja. Zmiany w klonie zostają tylko w nim.
 
+## Nadchodzące wydarzenia
+
+- Na środku górnego paska 3 najbliższe wydarzenia wszystkich win: kamienie milowe z koła postępu + plany z osi czasu (plan wygrywa z szacunkiem, np. własny termin zlania zastępuje szacowane „1. zlanie”). Ta sama czynność tego samego dnia = jedna pozycja z listą win. Etap, który już powinien trwać, ma dopisek „(przestaw etap)”. Klik otwiera wino.
+
 ## Oś czasu i dźwięk
 
 - **Etap** (prawa kolumna) to oś czasu: nastaw, burzliwa, cicha, dojrzewanie. Przy każdym etapie jest data jego początku, a przy przyszłych – szacunek. Pod etapem stoją notatki z jego okresu, przypisane po dacie, zwinięte do jednej linii (klik wysuwa całość z autorem i polem daty). Notatka z datą w przyszłości jest oznaczona jako „plan”. Zmiana daty usuwa stary wpis i zapisuje nowy z tym samym autorem (reguły nie pozwalają edytować historii). „+ Dodaj wpis” dopisuje notatkę między etapami.
