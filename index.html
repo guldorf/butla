@@ -1443,7 +1443,7 @@ function milestones(b){
 // ---------- nadchodzące wydarzenia na środku górnego paska ----------
 // kamienie milowe wszystkich win + plany z osi czasu; plan użytkownika wygrywa z szacunkiem (jak w kalendarzu .ics)
 const DSHORT=['nd','pn','wt','śr','cz','pt','sb'];
-const planTitle=t=>/pomiar brix/i.test(t)?'Pomiar Brix':/zlanie/i.test(t)?'Zlanie':/odcedzi/i.test(t)?'Odcedzenie':/cukr/i.test(t)?'Cukier':'Plan';
+const planTitle=t=>/^stabiliz/i.test(t)?'Stabilizacja':/^dosładz/i.test(t)?'Dosładzanie':/pomiar brix/i.test(t)?'Pomiar Brix':/zlanie/i.test(t)?'Zlanie':/odcedzi/i.test(t)?'Odcedzenie':/cukr/i.test(t)?'Cukier':'Plan';
 function upcoming(){
   const t=today(), G={};
   BATCHES.filter(b=>b.vol>0 && b.share!==0).forEach(b=>{
