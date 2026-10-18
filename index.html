@@ -125,7 +125,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .sndp .rate label{gap:4px;color:var(--ink)}
 .sndp input[type=radio]{accent-color:var(--accent)}
 .batches{margin:12px 0 4px}
-.bgrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;padding-bottom:4px}
+.bgrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:8px;overflow-x:auto;padding:0 0 4px 10px;position:relative}
+.bgrid>.bcol{position:relative;z-index:1}
+/* połączenia fuzji: kreska za kafelkami, widoczna w odstępach */
+svg.fulinks{position:absolute;left:0;top:0;z-index:0;pointer-events:none;overflow:visible}
+svg.fulinks path{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4;stroke-linecap:round;opacity:.8}
+svg.fulinks path.hl{opacity:1;stroke-width:3;stroke-dasharray:none}
+.batches .chip.link-hl{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 .bcol{display:flex;flex-direction:column;gap:6px;min-height:40px;border-radius:12px;padding:3px;transition:background .15s}
 .batches.drag-on .bcol{outline:1.5px dashed var(--accent-soft)}
 .batches.drag-on .bcol.target{background:rgba(103,180,55,.12);outline-color:var(--accent)}
@@ -645,6 +651,7 @@ const DOMAIN = 'butla.app';
 const FRUITS = {
   // sug: cukier w owocach (g na litr pulpy), jsug: g cukru w litrze samego soku, juice: ile soku daje litr pulpy
   ciemne:    {name:'Winogrona ciemne', color:'#6A1A32', pulp:'#3E1022', sug:190, jsug:210, juice:.7},
+  czarne:    {name:'Winogrona czarne', color:'#2E0A20', pulp:'#1C0614', sug:190, jsug:210, juice:.7},
   jasne:     {name:'Winogrona jasne',  color:'#C69A3A', pulp:'#7D7A2E', sug:180, jsug:200, juice:.7},
   jablka:    {name:'Jabłka',           color:'#D6B357', pulp:'#9A8A3E', sug:100, jsug:105, juice:.6},
   wisnie:    {name:'Wiśnie',           color:'#7A0F24', pulp:'#4A0815', sug:120, jsug:130, juice:.65},
@@ -1197,7 +1204,30 @@ function renderBatches(){
   const none=!BATCHES.length;
   $('emptyState').classList.toggle('hidden',!none);
   $('main').classList.toggle('hidden',none);
+  requestAnimationFrame(drawFusionLinks);
 }
+// połączenia fuzji na liście partii: kreska od butli źródłowej do partii, do której ją dolano
+function drawFusionLinks(){
+  const grid=document.querySelector('#batches .bgrid'); if(!grid) return;
+  const old=grid.querySelector('svg.fulinks'); if(old) old.remove();
+  const chipOf=id=>grid.querySelector(`.bcol .chip[data-id="${id}"]`);
+  const g=grid.getBoundingClientRect();
+  const pos=el=>{ const r=el.getBoundingClientRect(), dx=grid.scrollLeft-g.left, dy=grid.scrollTop-g.top; return {l:r.left+dx, r:r.right+dx, cy:(r.top+r.bottom)/2+dy}; };
+  const pairs=[]; BATCHES.forEach(t=>(t.fusions||[]).forEach(f=>{ if(f.id && f.id!==t.id && chipOf(f.id) && chipOf(t.id) && !pairs.some(p=>p[0]===f.id&&p[1]===t.id)) pairs.push([f.id,t.id]); }));
+  if(!pairs.length) return;
+  const paths=pairs.map(([s,t])=>{ const a=pos(chipOf(s)), b=pos(chipOf(t)); let d;
+    if(Math.abs(a.l-b.l)<4){ const x=Math.min(a.l,b.l), k=Math.min(10,x-1); d=`M${x},${a.cy} C${x-k},${a.cy} ${x-k},${b.cy} ${x},${b.cy}`; }   // ta sama kolumna – łuk z lewej
+    else { const [L,R]=a.l<b.l?[a,b]:[b,a], mx=(L.r+R.l)/2; d=`M${L.r},${L.cy} C${mx},${L.cy} ${mx},${R.cy} ${R.l},${R.cy}`; }
+    return `<path d="${d}" data-a="${s}" data-b="${t}"/>`; }).join('');
+  const svg=document.createElementNS(NS,'svg'); svg.setAttribute('class','fulinks'); svg.setAttribute('aria-hidden','true');
+  svg.setAttribute('width',grid.scrollWidth); svg.setAttribute('height',grid.scrollHeight); svg.innerHTML=paths; grid.prepend(svg);
+  // najechanie na partię podświetla jej połączenia i powiązane wina
+  const hl=id=>{ grid.querySelectorAll('.link-hl').forEach(x=>x.classList.remove('link-hl')); svg.querySelectorAll('path.hl').forEach(p=>p.classList.remove('hl')); if(!id) return;
+    svg.querySelectorAll('path').forEach(p=>{ if(p.dataset.a===id||p.dataset.b===id){ p.classList.add('hl'); [p.dataset.a,p.dataset.b].forEach(x=>{ const c=chipOf(x); if(c) c.classList.add('link-hl'); }); } }); };
+  grid.onpointerover=e=>{ const c=e.target.closest('.bcol .chip'); hl(c?c.dataset.id:null); };
+  grid.onpointerleave=()=>hl(null);
+}
+{ let lt=null; window.addEventListener('resize',()=>{ clearTimeout(lt); lt=setTimeout(drawFusionLinks,150); }); }
 // przeciąganie partii między kolumnami i w pionie: myszą od razu, palcem po przytrzymaniu
 (function(){
   const box=$('batches'); let D=null, justDragged=0;
