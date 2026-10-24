@@ -1430,7 +1430,8 @@ function milestones(b){
   const M=[
     {d:st[0], t:'Nastaw', a: pulp ? 'Miazga, woda i cukier z drożdżami i pożywką. Zostaw 10–20% miejsca na pianę.' : 'Sok i cukier z drożdżami i pożywką. Zostaw ok. 10% miejsca na pianę.'},
     {d:st[1], t:'Burzliwa', a: pulp ? 'Zanurzaj czapę 1–2 razy dziennie i pilnuj, czy nie kipi.' : 'Nie mieszaj, pilnuj piany. Drobny miąższ pływa na wierzchu.'},
-    {d:st[2], t: pulp?'Odcedzenie':'Przelanie', a: pulp ? 'Odcedź pulpę, przelej do czystej butli pod szyjkę i załóż rurkę.' : 'Zlej znad osadu do czystej butli pod szyjkę i załóż rurkę.'},
+    // sok fermentuje od początku w tej samej butli – na koniec burzliwej nic się nie przelewa (pierwsze zlanie dopiero po ok. 3 tyg. cichej)
+    {d:st[2], t: pulp?'Odcedzenie':'Cicha fermentacja', a: pulp ? 'Odcedź pulpę, przelej do czystej butli pod szyjkę i załóż rurkę.' : 'Burzliwa się uspokaja – młodego wina nie przelewaj. Gdy piana opadnie, dolej pod szyjkę i pilnuj rurki; pierwsze zlanie znad osadu za ok. 3 tygodnie.'},
     {d:addDays(st[2],21), t:'1. zlanie', a:'Zlej wężykiem znad osadu i dolej pod szyjkę. Zmierz Brix.'},
     {d:st[3], t:'Koniec fermentacji', a:'Brix stoi od tygodnia: zlej znad osadu. Teraz ewentualnie dosładzanie i klarowanie.'},
     {d:addDays(st[3],45), t:'2. zlanie', a:'Zlej znad osadu, jeśli na dnie zebrała się warstwa.'},
@@ -1451,9 +1452,9 @@ function upcoming(){
     const rack=plans.some(p=>/zlanie/i.test(p.a)), strain=plans.some(p=>/odcedzi/i.test(p.a));
     M.forEach(m=>{
       if(m.d<t || (!m.plan && m.t==='Nastaw')) return;
-      if(!m.plan && ((rack && m.t==='1. zlanie') || (strain && /^(Odcedzenie|Przelanie)$/.test(m.t)))) return;
+      if(!m.plan && ((rack && m.t==='1. zlanie') || (strain && m.t==='Odcedzenie'))) return;
       // etap, który już powinien trwać (szacunek przesunięty na dziś) – podpowiedź, żeby przestawić go w Butli
-      const idx={Burzliwa:1, Odcedzenie:2, Przelanie:2}[m.t], late=!m.plan && m.d===t && idx!=null && b.stage<idx;
+      const idx={Burzliwa:1, Odcedzenie:2, 'Cicha fermentacja':2}[m.t], late=!m.plan && m.d===t && idx!=null && b.stage<idx;
       const a=m.a.replace(/^Plan:\s*/,''), title=(m.plan?planTitle(a):m.t)+(late?' (przestaw etap)':''), k=m.d+'|'+title;
       const g=G[k]||(G[k]={d:m.d,t:title,ids:[],names:[],a:[]});
       const nm=b.name.replace(/ #\d+$/,''); if(!g.names.includes(nm)) g.names.push(nm);
