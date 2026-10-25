@@ -841,7 +841,7 @@ function normBatch(o){
   out.yeast=yeastList(out.yeast);
   out.name=String(out.name||'Bez nazwy');
   out.vessel = typeof out.vessel==='string' ? out.vessel : '';
-  out.fusions = Array.isArray(out.fusions) ? out.fusions.filter(f=>f&&typeof f==='object').map(f=>{ const o={d:/^\d{4}-\d{2}-\d{2}$/.test(f.d)?f.d:today(), id:String(f.id||''), from:String(f.from||'?'), l:Math.max(0,num(f.l))}; COMP_KEYS.forEach(k=>o[k]=Math.max(0,num(f[k]))); return o; }) : [];
+  out.fusions = Array.isArray(out.fusions) ? out.fusions.filter(f=>f&&typeof f==='object').map(f=>{ const o={d:/^\d{4}-\d{2}-\d{2}$/.test(f.d)?f.d:today(), id:String(f.id||''), from:String(f.from||'?'), l:Math.max(0,num(f.l)), sh:num(f.sh)>0?Math.min(1,num(f.sh)):1}; COMP_KEYS.forEach(k=>o[k]=Math.max(0,num(f[k]))); return o; }) : [];
   out.share = typeof out.share==='number' && isFinite(out.share) ? Math.min(1,Math.max(0,out.share)) : 1;
   out.clonedFrom = typeof out.clonedFrom==='string' && out.clonedFrom ? out.clonedFrom : null;
   { const y=parseInt(b.year!=null?b.year:(b.rocznik!=null?b.rocznik:''),10);
@@ -1291,10 +1291,10 @@ function renderForm(){
   setv('fName',b.name); setv('fYear',b.year); setv('fVessel',b.vessel||'');
   { const d0=HIST.filter(h=>h.batchId===b.id).map(h=>h.d).sort()[0]; $('yrHint').textContent=d0?`Pierwszy wpis: ${fmtDate(d0)}`:''; }
   if(ed!=='fFruit') $('fFruit').innerHTML=Object.entries(FRUITS).map(([k,f])=>`<option value="${k}" ${k===b.fruit?'selected':''}>${f.name}</option>`).join('');
-  // w okienkach suma: własny nastaw + to, co doszło z fuzji
-  const FS=fuseSum(b), wf=k=>r2(b[k]+(FS[k]||0));
+  // w okienkach faktyczna zawartość: (własny nastaw + to, co doszło z fuzji) × część, która nie została odlana dalej
+  const FS=fuseSum(b), sh=b.share==null?1:b.share, wf=k=>r2((b[k]+(FS[k]||0))*sh);
   setv('fCap',b.cap); setv('fVol',b.vol); setv('fYeast',wf('yeastG')); setv('fNut',wf('nutG'));
-  setv('fPulpa',r2(b.pulpaL+FS.pulpaL+FS.juiceL)); $('fJuice').querySelectorAll('button').forEach(x=>x.setAttribute('aria-checked',String(+x.dataset.j===(b.juice?1:0)))); setv('fSugar',wf('sugarKg')); setv('fSugar2',b.sugarKg2); setv('fWater',wf('waterL'));
+  setv('fPulpa',r2((b.pulpaL+FS.pulpaL+FS.juiceL)*sh)); $('fJuice').querySelectorAll('button').forEach(x=>x.setAttribute('aria-checked',String(+x.dataset.j===(b.juice?1:0)))); setv('fSugar',wf('sugarKg')); setv('fSugar2',b.sugarKg2); setv('fWater',wf('waterL'));
   renderYeast(); renderHints(); renderBrix();
   $('del').disabled=!BATCHES.length;
   { const par=b.clonedFrom&&byId(b.clonedFrom), kids=clonesOf(b);
@@ -1315,7 +1315,9 @@ function renderHints(){
   const b=active(), free=b.cap-b.vol;
   $('vHint').textContent = free<0 ? `Więcej niż pojemność o ${fmt(-free)} l` : `Wolne ${fmt(free)} l (${Math.round(b.cap?free/b.cap*100:0)}%)`;
   // składowe z dolanych butli – w nawiasach przy polach, żeby ślad fuzji był w danych, nie tylko w historii
-  const F=fuseSum(b), C=comp(b), hasF=(b.fusions||[]).length>0, r1=n=>fmt(Math.round(n*100)/100);
+  // F×sh = to, co z fuzji jest jeszcze w butli (gdy część wina odlano dalej, sh < 1)
+  const sh=b.share==null?1:b.share, F0=fuseSum(b), F={}; for(const k in F0) F[k]=F0[k]*sh;
+  const C=comp(b), hasF=(b.fusions||[]).length>0, r1=n=>fmt(Math.round(n*100)/100);
   const fu=(v,u,tot)=> hasF&&v>0 ? `(w tym + ${r1(v)} ${u} z fuzji → razem ${r1(tot)} ${u})` : '';
   $('pHint').textContent=fu(F.pulpaL+F.juiceL,'l',C.pulpaL+C.juiceL);
   $('jHint').textContent=juiceWords(b); $('wHint').textContent=fu(F.waterL,'l',C.waterL);
@@ -1323,7 +1325,9 @@ function renderHints(){
   $('yHint').textContent = `${sachets(C.yeastG)}${b.vol>0?`, ${fmt(C.yeastG/b.vol)} g/l`:''}`+(hasF&&F.yeastG>0?` (w tym + ${r1(F.yeastG)} g z fuzji)`:'');
   $('nHint').textContent = C.nutG>0 ? (b.vol>0?`${fmt(C.nutG/b.vol)} g/l`:'')+(hasF&&F.nutG>0?` (w tym + ${r1(F.nutG)} g z fuzji)`:'') : 'bez pożywki';
   const fl=$('fuList'); fl.classList.toggle('hidden',!hasF);
-  fl.innerHTML = hasF ? '<li class="h">Dolane w fuzjach:</li>'+b.fusions.map(f=>`<li>${shortDate(f.d)} <b>${esc(f.from)}</b> ${fmt(f.l)} l (pulpa ${r1(f.pulpaL)} l${f.juiceL?`, sok ${r1(f.juiceL)} l`:''}, woda ${r1(f.waterL)} l, cukier ${r1(f.sugarKg)} kg, drożdże ${r1(f.yeastG)} g, pożywka ${r1(f.nutG)} g)</li>`).join('') : '';
+  // f.sh: część składu partii w chwili dolania – wpis jest zapisany „na całość”, więc ×sh daje faktycznie dolaną ilość
+  fl.innerHTML = hasF ? '<li class="h">Dolane w fuzjach:</li>'+b.fusions.map(f=>{ const x=k=>r1((f[k]||0)*(f.sh||1));
+    return `<li>${shortDate(f.d)} <b>${esc(f.from)}</b> ${fmt(f.l)} l (pulpa ${x('pulpaL')} l${f.juiceL?`, sok ${x('juiceL')} l`:''}, woda ${x('waterL')} l, cukier ${x('sugarKg')} kg, drożdże ${x('yeastG')} g, pożywka ${x('nutG')} g)</li>`; }).join('') : '';
   const N=nastaw(b);
   if(!N){ $('propHint').textContent = b.share===0 ? 'Butla pusta – zawartość przelana w fuzji.' : 'Wpisz ilości owoców, cukru i wody.'; $('propHint2').textContent=''; return; }
   $('propHint').textContent=propWords(N)+(hasF?' (z fuzjami)':'');
@@ -1750,9 +1754,10 @@ $('fFruit').addEventListener('change',e=>{ const b=active(); b.fruit=e.target.va
 function numField(id,key,min,textFn){
   $(id).addEventListener('input',e=>{ const b=active(); if(!b) return;
     logLater(b,key,textFn);           // zapamiętuje wartość sprzed zmiany
-    // okienko pokazuje sumę z fuzjami, więc zapisujemy tylko własną część
+    // okienko pokazuje faktyczną zawartość (z fuzjami, × część nieodlana), więc zapisujemy tylko własną część
     const FZ=fuseSum(b), fz=key==='pulpaL' ? FZ.pulpaL+FZ.juiceL : COMP_KEYS.includes(key)?(FZ[key]||0):0;
-    b[key]=Math.max(min,r2(num(e.target.value)-fz)); save(b); renderHints(); renderBatches(); refresh(); });
+    const sh=COMP_KEYS.includes(key)&&b.share>0 ? b.share : 1;
+    b[key]=Math.max(min,r2(num(e.target.value)/sh-fz)); save(b); renderHints(); renderBatches(); refresh(); });
 }
 $('fYear').addEventListener('change',e=>{ const b=active(); if(!b) return; const y=parseInt(e.target.value,10);
   if(!(y>=1990&&y<=2100)){ e.target.value=b.year; return; } if(y===b.year) return;
@@ -1901,7 +1906,7 @@ $('mix').onclick=()=>{
     // składowe dolanego wina: część składu butli źródłowej proporcjonalna do przelanych litrów
     const tS=J.t.share>0?J.t.share:1, added=[];
     J.src.forEach(b=>{ const l=FU.add[b.id], part=b.vol>0?Math.min(1,l/b.vol):0, c=comp(b);
-      const e={d:today(),id:b.id,from:b.name,l}; COMP_KEYS.forEach(k=>e[k]=Math.round(c[k]*part/tS*1000)/1000); added.push(e);
+      const e={d:today(),id:b.id,from:b.name,l,sh:tS}; COMP_KEYS.forEach(k=>e[k]=Math.round(c[k]*part/tS*1000)/1000); added.push(e);
       b.share=Math.round((b.share==null?1:b.share)*(1-part)*10000)/10000;
       b.vol=Math.max(0,r2(b.vol-l));
       wb.update(B.doc(b.id),{vol:b.vol,share:b.share,updatedAt:FV().serverTimestamp(),updatedBy:ME.uid});
