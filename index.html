@@ -84,6 +84,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .bxstat{margin:10px 0 0;font-size:14px}
 .bxstat b{font-weight:600}
 .bxstat .ok{color:var(--chart);font-weight:600}
+.bxstat .bad{color:var(--warn);font-weight:600}
 .bxchart{margin-top:8px}
 .bxchart svg{display:block;width:100%;height:auto;overflow:visible}
 .bxchart .grid{stroke:var(--line);stroke-width:1}
@@ -1611,7 +1612,10 @@ function renderBrix(){
   let still='';
   const old=[...M].reverse().find(m=>dayNum(last.d)-dayNum(m.d)>=7);
   if(old){ const win=M.filter(m=>m.d>=old.d), v=win.map(m=>m.brix);
-    if(Math.max(...v)-Math.min(...v)<=.5) still=` · <span class="ok">odczyt stoi od ${dayNum(last.d)-dayNum(old.d)} dni – czas na zlanie znad osadu</span>`; }
+    // przy wysokim odczycie (≥ 10 Brix) to raczej zatrzymana fermentacja niż koniec – wino z alkoholem pokazuje zwykle 5–8
+    if(Math.max(...v)-Math.min(...v)<=.5) still = last.brix>=10
+      ? ` · <span class="bad">odczyt stoi od ${dayNum(last.d)-dayNum(old.d)} dni przy ${fmt(last.brix)} Brix – fermentacja mogła się zatrzymać: sprawdź rurkę i temperaturę (najlepiej 18–24 °C), ewentualnie dodaj pożywkę</span>`
+      : ` · <span class="ok">odczyt stoi od ${dayNum(last.d)-dayNum(old.d)} dni – czas na zlanie znad osadu</span>`; }
   const ch = prev ? (()=>{ const d=r2(last.brix-prev.brix), dd=Math.max(1,dayNum(last.d)-dayNum(prev.d));
     const same=prev.d===last.d; return ` · ${d===0?'bez zmian':(d>0?'+':'−')+fmt(Math.abs(d))} ${same?'względem poprzedniego pomiaru tego dnia':'od '+shortDate(prev.d)}`+(d<0&&!same&&Math.abs(d)/dd>=.05?` (ok. ${fmt(Math.round(Math.abs(d)/dd*10)/10)} na dzień)`:''); })() : '';
   st.innerHTML=`Ostatni: <b>${fmt(last.brix)} Brix</b> (${shortDate(last.d)})${ch}${still}`;
