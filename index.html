@@ -97,6 +97,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .bxtip{position:fixed;z-index:40;pointer-events:none;background:var(--ink);color:var(--on-ink);font-size:12px;padding:4px 8px;border-radius:6px;white-space:nowrap}
 .vessel .alarm{margin:0 4px 6px}
 .vessel.fu .alarm{display:none}
+/* dosładzanie: zielone kostki cukru (1 kostka = 1 łyżka) */
+.sweet{position:absolute;left:1%;top:1%;width:26%;max-width:150px;z-index:2;display:grid;gap:6px;justify-items:start}
+.vessel.fu .sweet{display:none}
+.sweet .cubes{display:flex;flex-wrap:wrap;gap:3px;max-width:100%}
+.sweet .cubes:empty{display:none}
+.sweet .cubes svg{width:18px;height:18px;display:block}
+.sweet .cubes svg.new{animation:cubeIn .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes cubeIn{from{transform:translateY(-14px) scale(.4);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sweet .cubes svg.new{animation:none}}
+.sweet .sw-btns{display:flex;gap:4px;white-space:nowrap}
+.sweet .btn.small{padding:4px 9px;font-size:13px}
+.sweet .btn:not(.ghost){background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sweet small{font-size:12px;color:var(--muted);line-height:1.3}
 .alarm{margin:14px 0 0;padding:10px 14px;border-radius:10px;font-size:14px;border:1px solid var(--line);background:var(--surface)}
 .alarm.bad{background:var(--alarm-bg);color:var(--warn);border-color:var(--warn);font-weight:600}
 .alarm.warn{color:var(--warn)}
@@ -470,6 +483,11 @@ dialog h3{font-size:17px;margin:18px 0 8px}
                   <label for="fSugar2">Cukier (kg) II partia</label>
                   <div class="stepper"><button type="button" data-step="fSugar2:-0.1" aria-label="Mniej cukru, II partia">−</button>
                     <input type="number" id="fSugar2" min="0" step="0.1"><button type="button" data-step="fSugar2:0.1" aria-label="Więcej cukru, II partia">+</button></div>
+                </div>
+                <div class="field">
+                  <label for="fSugar3">Cukier (kg) III partia</label>
+                  <div class="stepper"><button type="button" data-step="fSugar3:-0.1" aria-label="Mniej cukru, III partia">−</button>
+                    <input type="number" id="fSugar3" min="0" step="0.1"><button type="button" data-step="fSugar3:0.1" aria-label="Więcej cukru, III partia">+</button></div>
                   <div class="hint" id="s2Hint"></div>
                 </div>
                 <div class="field full"><span class="lab">Drożdże (można zaznaczyć kilka)</span><div class="chips" id="yeastChips"></div></div>
@@ -560,6 +578,11 @@ dialog h3{font-size:17px;margin:18px 0 8px}
               </svg>
               <small id="rgLeft"></small>
               <div class="rgb" id="rgBottles"></div>
+            </div>
+            <div class="sweet hidden" id="sweet" aria-label="Dosładzanie">
+              <div class="cubes" id="cubes"></div>
+              <div class="sw-btns"><button type="button" class="btn small" id="spoonAdd" title="Dodaj łyżkę cukru (ok. 12 g)" aria-label="Dodaj łyżkę cukru">+ łyżka</button><button type="button" class="btn ghost small" id="spoonDel" aria-label="Cofnij ostatnią łyżkę" title="Cofnij ostatnią łyżkę">−</button></div>
+              <small id="spoonTxt"></small>
             </div>
             <svg viewBox="0 0 440 480" role="img" aria-label="Naczynie z warstwami wina i rurką fermentacyjną">
               <defs>
@@ -799,9 +822,9 @@ function setYear(y){ try{ localStorage.setItem('butla.year',String(y)); }catch(e
 const visible = () => { const y=selYear(); return y==='all' ? BATCHES : BATCHES.filter(b=>b.year===y); };
 const active = () => { const v=visible(), a=byId(activeId()); return (a&&v.includes(a)) ? a : (v[0]||null); };
 
-const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','juice','sugarKg','sugarKg2','waterL','stage','color','order','col','stageDates','clonedFrom','vessel','fusions','share'];
+const BATCH_FIELDS=['name','year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','juice','sugarKg','sugarKg2','sugarKg3','waterL','stage','color','order','col','stageDates','clonedFrom','vessel','spoons','fusions','share'];
 // pola, które oryginał przekazuje klonom (nazwa, miejsce i kolor zostają własne; fuzja i usuwanie zapisują osobno)
-const SYNC_FIELDS=['year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','juice','sugarKg','sugarKg2','waterL','stage','stageDates'];
+const SYNC_FIELDS=['year','fruit','cap','vol','yeast','yeastG','nutG','pulpaL','juice','sugarKg','sugarKg2','sugarKg3','waterL','stage','stageDates'];
 // klony oryginału (także klony klonów); klon sam niczego dalej nie przekazuje
 function clonesOf(b){
   if(!b || b.clonedFrom) return [];
@@ -810,7 +833,7 @@ function clonesOf(b){
 }
 function mk(o){
   return Object.assign({name:'Nowa partia',year:new Date().getFullYear(),fruit:'ciemne',cap:5,vol:4.5,yeast:['uni'],yeastG:5,nutG:0,
-    pulpaL:2,juice:0,sugarKg:1,sugarKg2:0,waterL:2,stage:0,color:null,clonedFrom:null,vessel:'',fusions:[],share:1},o);
+    pulpaL:2,juice:0,sugarKg:1,sugarKg2:0,sugarKg3:0,waterL:2,stage:0,color:null,clonedFrom:null,vessel:'',spoons:0,fusions:[],share:1},o);
 }
 // przyjmuje partię z bazy albo z eksportu (także starszego, z proporcjami w %)
 function normBatch(o){
@@ -829,7 +852,7 @@ function normBatch(o){
   if(b.nutG==null && b.nutrientG!=null) b.nutG=num(b.nutrientG);
   const out=mk({});
   BATCH_FIELDS.forEach(k=>{ if(b[k]!==undefined) out[k]=b[k]; });
-  ['cap','vol','yeastG','nutG','pulpaL','sugarKg','sugarKg2','waterL'].forEach(k=>out[k]=Math.max(0,num(out[k])));
+  ['cap','vol','yeastG','nutG','pulpaL','sugarKg','sugarKg2','sugarKg3','waterL'].forEach(k=>out[k]=Math.max(0,num(out[k])));
   out.juice=num(out.juice)>=0.5?1:0;   // owoce wrzucone jako: 0 = pulpa (miazga ze skórkami), 1 = sam sok
   out.stage=Math.min(STAGES.length-1,Math.max(0,parseInt(out.stage,10)||0));
   { const sd={}, src=out.stageDates&&typeof out.stageDates==='object'?out.stageDates:{};
@@ -841,6 +864,7 @@ function normBatch(o){
   out.yeast=yeastList(out.yeast);
   out.name=String(out.name||'Bez nazwy');
   out.vessel = typeof out.vessel==='string' ? out.vessel : '';
+  out.spoons = Math.max(0,Math.round(num(out.spoons)));
   out.fusions = Array.isArray(out.fusions) ? out.fusions.filter(f=>f&&typeof f==='object').map(f=>{ const o={d:/^\d{4}-\d{2}-\d{2}$/.test(f.d)?f.d:today(), id:String(f.id||''), from:String(f.from||'?'), l:Math.max(0,num(f.l)), sh:num(f.sh)>0?Math.min(1,num(f.sh)):1}; COMP_KEYS.forEach(k=>o[k]=Math.max(0,num(f[k]))); return o; }) : [];
   out.share = typeof out.share==='number' && isFinite(out.share) ? Math.min(1,Math.max(0,out.share)) : 1;
   out.clonedFrom = typeof out.clonedFrom==='string' && out.clonedFrom ? out.clonedFrom : null;
@@ -898,7 +922,7 @@ function diffText(label,unit,cur,was,extra){
 
 // ---------- proporcje nastawu ----------
 // cukier razem: I partia (w nastawie) + II partia (dosypana później)
-const sugarTot = b => (b.sugarKg||0)+(b.sugarKg2||0);
+const sugarTot = b => (b.sugarKg||0)+(b.sugarKg2||0)+(b.sugarKg3||0);
 // składowe z fuzji: co wniosły dolane butle (proporcjonalnie do przelanych litrów)
 // pulpaL w składzie = sama miazga, juiceL = sam sok (w partii pole pulpaL to wszystkie owoce, a juice – jaka ich część to sok)
 const COMP_KEYS=['pulpaL','juiceL','waterL','sugarKg','yeastG','nutG'];
@@ -1294,8 +1318,8 @@ function renderForm(){
   // w okienkach faktyczna zawartość: (własny nastaw + to, co doszło z fuzji) × część, która nie została odlana dalej
   const FS=fuseSum(b), sh=b.share==null?1:b.share, wf=k=>r2((b[k]+(FS[k]||0))*sh);
   setv('fCap',b.cap); setv('fVol',b.vol); setv('fYeast',wf('yeastG')); setv('fNut',wf('nutG'));
-  setv('fPulpa',r2((b.pulpaL+FS.pulpaL+FS.juiceL)*sh)); $('fJuice').querySelectorAll('button').forEach(x=>x.setAttribute('aria-checked',String(+x.dataset.j===(b.juice?1:0)))); setv('fSugar',wf('sugarKg')); setv('fSugar2',b.sugarKg2); setv('fWater',wf('waterL'));
-  renderYeast(); renderHints(); renderBrix();
+  setv('fPulpa',r2((b.pulpaL+FS.pulpaL+FS.juiceL)*sh)); $('fJuice').querySelectorAll('button').forEach(x=>x.setAttribute('aria-checked',String(+x.dataset.j===(b.juice?1:0)))); setv('fSugar',wf('sugarKg')); setv('fSugar2',b.sugarKg2); setv('fSugar3',b.sugarKg3); setv('fWater',wf('waterL'));
+  renderYeast(); renderHints(); renderBrix(); renderSweet();
   $('del').disabled=!BATCHES.length;
   { const par=b.clonedFrom&&byId(b.clonedFrom), kids=clonesOf(b);
     $('cloneInfo').innerHTML = b.clonedFrom ? `To klon partii <b>${esc(par?par.name:'(usunięta)')}</b> – jej zmiany przechodzą tutaj.`
@@ -1332,7 +1356,7 @@ function renderHints(){
   if(!N){ $('propHint').textContent = b.share===0 ? 'Butla pusta – zawartość przelana w fuzji.' : 'Wpisz ilości owoców, cukru i wody.'; $('propHint2').textContent=''; return; }
   $('propHint').textContent=propWords(N)+(hasF?' (z fuzjami)':'');
   $('propHint2').textContent=`Razem ok. ${fmt(N.tot)} l nastawu, ${Math.round(N.sugar*1000/N.tot)} g cukru na litr`;
-  $('s2Hint').textContent = b.sugarKg2>0 ? `Razem cukru ${fmt(sugarTot(b))} kg` : '';
+  $('s2Hint').textContent = (b.sugarKg2>0||b.sugarKg3>0) ? `Razem cukru ${fmt(sugarTot(b))} kg` : '';
   const E=estimate(b), d=STAGE_DAYS, rng=(a,z,u)=>`${a}–${z} ${u}`;
   $('estList').innerHTML=[
     `<li>Etapy: burzliwa <b>${rng(d[1][0],d[1][1],'dni')}</b>, cicha <b>${rng(d[2][0]/7,d[2][1]/7,'tyg.')}</b>, dojrzewanie <b>${rng(d[3][0]/30,Math.round(d[3][1]/30),'mies.')}</b></li>`,
@@ -1340,6 +1364,7 @@ function renderHints(){
     `<li>Alkohol: <b>ok. ${Math.round(E.abv)}%</b>`+(E.potential>E.abv+.5
       ? ` – cukru starczy na ${Math.round(E.potential)}%, ale drożdże ${yeastNames(b)} zwykle kończą ok. ${E.tol}%; zostanie <b>${E.style}</b> (ok. ${Math.round(E.residual)} g cukru na litr)</li>`
       : `, wino raczej <b>${E.style}</b></li>`),
+    E.sweet>0 ? `<li>Dosłodzone: <b>+${fmt(Math.round(E.sweet*10)/10)} g/l</b> (${b.spoons} ${spoonWord(b.spoons)} cukru) – wliczone w słodycz</li>` : '',
   ].join('');
   // alarm: czapa w burzliwej podnosi nastaw o ok. 12%
   const al=$('riseAlarm');
@@ -1357,10 +1382,32 @@ function estimate(b){
   const c=comp(b), liquid=c.waterL + c.sugarKg*SUGAR_L + c.pulpaL*F.juice + c.juiceL;
   const sugarG=c.sugarKg*1000 + c.pulpaL*F.sug + c.juiceL*(F.jsug||F.sug);
   const potential = liquid>0 ? sugarG/liquid/17 : 0;
-  const tol=yeastTol(b), abv=Math.min(potential,tol), residual=Math.max(0,(potential-abv)*17);
+  const sweet = b.vol>0 ? (b.spoons||0)*SPOON_G/b.vol : 0;   // dosładzanie po fermentacji (g/l)
+  const tol=yeastTol(b), abv=Math.min(potential,tol), residual=Math.max(0,(potential-abv)*17)+sweet;
   const style = residual<4 ? 'wytrawne' : residual<12 ? 'półwytrawne' : residual<45 ? 'półsłodkie' : 'słodkie';
-  return {clear:liquid*.9, potential, abv, tol, residual, style};
+  return {clear:liquid*.9, potential, abv, tol, residual, style, sweet};
 }
+// ---------- dosładzanie po fermentacji: 1 zielona kostka = 1 łyżka cukru ----------
+const SPOON_G=12;   // płaska łyżka cukru ≈ 12 g
+const spoonWord=n=>n===1?'łyżka':(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?'łyżki':'łyżek';
+const CUBE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 21 7.3 12 12.1 3 7.3z" fill="#B6E88F"/><path d="M3 7.3 12 12.1V22L3 17.2z" fill="#67B437"/><path d="M21 7.3 12 12.1V22l9-4.8z" fill="#3E7A1C"/><path d="M12 2.5 21 7.3V17.2L12 22 3 17.2V7.3z" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".8" stroke-linejoin="round"/></svg>';
+function renderSweet(anim){
+  const b=active(), box=$('sweet'); if(!b||!box) return;
+  const n=b.spoons||0, show=b.stage>=2 || n>0;
+  box.classList.toggle('hidden',!show); if(!show) return;
+  const cubes=$('cubes'); cubes.innerHTML=CUBE.repeat(n);
+  if(anim && cubes.lastElementChild) cubes.lastElementChild.classList.add('new');
+  $('spoonDel').disabled=!n;
+  $('spoonTxt').textContent = n ? `${n} ${spoonWord(n)} ≈ ${n*SPOON_G} g`+(b.vol>0?` (${fmt(Math.round(n*SPOON_G/b.vol*10)/10)} g/l)`:'') : 'Dosładzanie: 1 kostka = 1 łyżka cukru';
+}
+$('spoonAdd').onclick=()=>{ const b=active(); if(!b) return;
+  b.spoons=(b.spoons||0)+1; saveOne(b);
+  log(b,`Dosłodzenie: + 1 łyżka cukru (razem ${b.spoons} ${spoonWord(b.spoons)}, ok. ${b.spoons*SPOON_G} g)`);
+  renderSweet(true); renderHints(); };
+$('spoonDel').onclick=()=>{ const b=active(); if(!b||!b.spoons) return;
+  b.spoons--; saveOne(b);
+  log(b,`Dosłodzenie: cofnięto 1 łyżkę (razem ${b.spoons} ${spoonWord(b.spoons)}, ok. ${b.spoons*SPOON_G} g)`);
+  renderSweet(); renderHints(); };
 const addDays=(iso,n)=>{ const d=new Date(iso+'T12:00'); d.setDate(d.getDate()+n); return isoOf(d); };
 const shortDate=iso=>fmtDate(iso).slice(0,5);
 // data rozpoczęcia etapu: zapisana, a dla nastawu – najwcześniejszy wpis w historii
@@ -1550,7 +1597,7 @@ function stageEstimate(b,j){
   return [addDays(base,lo),addDays(base,hi)];
 }
 // wpisy zapisywane automatycznie przy zmianie pól i etapów – na osi czasu ich nie pokazujemy (zostają w bazie)
-const AUTO_RE=/^(Partia utworzona|Naczynie: |Nazwa: |Owoce: |Rocznik: |Pojemność naczynia: |Wino w naczyniu: |Drożdże|Pożywka: |Owoce \/ pulpa: |Cukier( \((I|II) partia\))?: |Woda: |Etap: |Cofnięto do etapu: |Początek etapu |Sklonowan)/;
+const AUTO_RE=/^(Partia utworzona|Naczynie: |Nazwa: |Owoce: |Rocznik: |Pojemność naczynia: |Wino w naczyniu: |Drożdże|Pożywka: |Owoce \/ pulpa: |Cukier( \((I|II|III) partia\))?: |Woda: |Etap: |Cofnięto do etapu: |Początek etapu |Sklonowan)/;
 const isNote = h => h.note || h.imp || !AUTO_RE.test(h.t||'');
 // oś czasu: etapy partii, a pod każdym notatki z jego okresu i „+ Dodaj wpis”
 function renderStage(){
@@ -1687,7 +1734,7 @@ function fusionStatus(){
 
 function refresh(){
   if(!active()){ setTarget({air:0,liq:0,layers:[]}); caption(); return; }
-  if(state.mode==='ferm'){ renderStage(); setTarget(fermTargets(active())); renderRing(active()); }
+  if(state.mode==='ferm'){ renderStage(); setTarget(fermTargets(active())); renderRing(active()); renderSweet(); }
   else { renderFusion(); setTarget(fusionTargets()); }
   caption();
 }
@@ -1774,6 +1821,7 @@ $('fJuice').addEventListener('click',e=>{ const btn=e.target.closest('button'); 
 numField('fPulpa','pulpaL',0,(c,was)=>diffText('Owoce','l',c.pulpaL,was,propTxt(c)));
 numField('fSugar','sugarKg',0,(c,was)=>diffText('Cukier (I partia)','kg',c.sugarKg,was,propTxt(c)));
 numField('fSugar2','sugarKg2',0,(c,was)=>diffText('Cukier (II partia)','kg',c.sugarKg2,was,`razem ${fmt(sugarTot(c))} kg`));
+numField('fSugar3','sugarKg3',0,(c,was)=>diffText('Cukier (III partia)','kg',c.sugarKg3,was,`razem ${fmt(sugarTot(c))} kg`));
 numField('fWater','waterL',0,(c,was)=>diffText('Woda','l',c.waterL,was,propTxt(c)));
 document.querySelectorAll('[data-step]').forEach(btn=>btn.addEventListener('click',()=>{
   const [id,d]=btn.dataset.step.split(':'), inp=$(id);
