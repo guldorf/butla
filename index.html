@@ -97,7 +97,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .bxtip{position:fixed;z-index:40;pointer-events:none;background:var(--ink);color:var(--on-ink);font-size:12px;padding:4px 8px;border-radius:6px;white-space:nowrap}
 .vessel .alarm{margin:0 4px 6px}
 .vessel.fu .alarm{display:none}
-/* dosładzanie: zielone kostki cukru (1 kostka = 1 łyżka) */
+/* dosładzanie: zielone kostki cukru (1 kostka = 1 łyżeczka) */
 .sweet{position:absolute;left:1%;top:1%;width:26%;max-width:150px;z-index:2;display:grid;gap:6px;justify-items:start}
 .vessel.fu .sweet{display:none}
 .sweet .cubes{display:flex;flex-wrap:wrap;gap:3px;max-width:100%}
@@ -581,7 +581,7 @@ dialog h3{font-size:17px;margin:18px 0 8px}
             </div>
             <div class="sweet hidden" id="sweet" aria-label="Dosładzanie">
               <div class="cubes" id="cubes"></div>
-              <div class="sw-btns"><button type="button" class="btn small" id="spoonAdd" title="Dodaj łyżkę cukru (ok. 12 g)" aria-label="Dodaj łyżkę cukru">+ łyżka</button><button type="button" class="btn ghost small" id="spoonDel" aria-label="Cofnij ostatnią łyżkę" title="Cofnij ostatnią łyżkę">−</button></div>
+              <div class="sw-btns"><button type="button" class="btn small" id="spoonAdd" title="Dodaj łyżeczkę cukru (ok. 5 g)" aria-label="Dodaj łyżeczkę cukru">+ łyżeczka</button><button type="button" class="btn ghost small" id="spoonDel" aria-label="Cofnij ostatnią łyżeczkę" title="Cofnij ostatnią łyżeczkę">−</button></div>
               <small id="spoonTxt"></small>
             </div>
             <svg viewBox="0 0 440 480" role="img" aria-label="Naczynie z warstwami wina i rurką fermentacyjną">
@@ -1387,9 +1387,9 @@ function estimate(b){
   const style = residual<4 ? 'wytrawne' : residual<12 ? 'półwytrawne' : residual<45 ? 'półsłodkie' : 'słodkie';
   return {clear:liquid*.9, potential, abv, tol, residual, style, sweet};
 }
-// ---------- dosładzanie po fermentacji: 1 zielona kostka = 1 łyżka cukru ----------
-const SPOON_G=12;   // płaska łyżka cukru ≈ 12 g
-const spoonWord=n=>n===1?'łyżka':(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?'łyżki':'łyżek';
+// ---------- dosładzanie po fermentacji: 1 zielona kostka = 1 łyżeczka cukru ----------
+const SPOON_G=5;    // płaska łyżeczka cukru ≈ 5 g
+const spoonWord=n=>n===1?'łyżeczka':(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?'łyżeczki':'łyżeczek';
 const CUBE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 21 7.3 12 12.1 3 7.3z" fill="#B6E88F"/><path d="M3 7.3 12 12.1V22L3 17.2z" fill="#67B437"/><path d="M21 7.3 12 12.1V22l9-4.8z" fill="#3E7A1C"/><path d="M12 2.5 21 7.3V17.2L12 22 3 17.2V7.3z" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".8" stroke-linejoin="round"/></svg>';
 function renderSweet(anim){
   const b=active(), box=$('sweet'); if(!b||!box) return;
@@ -1398,15 +1398,15 @@ function renderSweet(anim){
   const cubes=$('cubes'); cubes.innerHTML=CUBE.repeat(n);
   if(anim && cubes.lastElementChild) cubes.lastElementChild.classList.add('new');
   $('spoonDel').disabled=!n;
-  $('spoonTxt').textContent = n ? `${n} ${spoonWord(n)} ≈ ${n*SPOON_G} g`+(b.vol>0?` (${fmt(Math.round(n*SPOON_G/b.vol*10)/10)} g/l)`:'') : 'Dosładzanie: 1 kostka = 1 łyżka cukru';
+  $('spoonTxt').textContent = n ? `${n} ${spoonWord(n)} ≈ ${n*SPOON_G} g`+(b.vol>0?` (${fmt(Math.round(n*SPOON_G/b.vol*10)/10)} g/l)`:'') : 'Dosładzanie: 1 kostka = 1 łyżeczka cukru';
 }
 $('spoonAdd').onclick=()=>{ const b=active(); if(!b) return;
   b.spoons=(b.spoons||0)+1; saveOne(b);
-  log(b,`Dosłodzenie: + 1 łyżka cukru (razem ${b.spoons} ${spoonWord(b.spoons)}, ok. ${b.spoons*SPOON_G} g)`);
+  log(b,`Dosłodzenie: + 1 łyżeczka cukru (razem ${b.spoons} ${spoonWord(b.spoons)}, ok. ${b.spoons*SPOON_G} g)`);
   renderSweet(true); renderHints(); };
 $('spoonDel').onclick=()=>{ const b=active(); if(!b||!b.spoons) return;
   b.spoons--; saveOne(b);
-  log(b,`Dosłodzenie: cofnięto 1 łyżkę (razem ${b.spoons} ${spoonWord(b.spoons)}, ok. ${b.spoons*SPOON_G} g)`);
+  log(b,`Dosłodzenie: cofnięto 1 łyżeczkę (razem ${b.spoons} ${spoonWord(b.spoons)}, ok. ${b.spoons*SPOON_G} g)`);
   renderSweet(); renderHints(); };
 const addDays=(iso,n)=>{ const d=new Date(iso+'T12:00'); d.setDate(d.getDate()+n); return isoOf(d); };
 const shortDate=iso=>fmtDate(iso).slice(0,5);

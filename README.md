@@ -9,7 +9,7 @@ Dane trzyma Firebase (Auth + Firestore, projekt `butla-91912`, baza `eur3`), str
 | Kolekcja | Zawartość |
 |---|---|
 | `users/{uid}` | `login`, `name`, `role` (`admin`/`user`), `color` |
-| `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast` (lista rodzajów: `malaga`, `sherry`, `uni`; starsze dane mają jeden napis), `yeastG` (razem), `nutG`, `pulpaL` (owoce razem), `juice` (0 = pulpa, 1 = sam sok), `sugarKg` (cukier I partia), `sugarKg2` (cukier II partia), `sugarKg3` (cukier III partia), `spoons` (dosładzanie: liczba łyżek cukru po fermentacji), `waterL`, `stage`, `stageDates` (`{nr etapu: RRRR-MM-DD}`), `col` (kolumna 0–4), `order` (pozycja w kolumnie), `color`, `clonedFrom` |
+| `batches/{id}` | `name`, `year`, `fruit`, `cap`, `vol`, `yeast` (lista rodzajów: `malaga`, `sherry`, `uni`; starsze dane mają jeden napis), `yeastG` (razem), `nutG`, `pulpaL` (owoce razem), `juice` (0 = pulpa, 1 = sam sok), `sugarKg` (cukier I partia), `sugarKg2` (cukier II partia), `sugarKg3` (cukier III partia), `spoons` (dosładzanie: liczba łyżeczek cukru po fermentacji), `waterL`, `stage`, `stageDates` (`{nr etapu: RRRR-MM-DD}`), `col` (kolumna 0–4), `order` (pozycja w kolumnie), `color`, `clonedFrom` |
 | `history/{id}` | `batchId`, `bn` (nazwa partii), `d` (data `RRRR-MM-DD`), `t` (treść), `ts`, `uid` (kto zapisał), opcjonalnie `au`/`an` (pierwotny autor przy kopiach i dawnym imporcie), `imp`, `note` (notatka dodana na osi czasu). Wpisy automatyczne (zmiany pól i etapów) zostają w bazie, ale oś czasu ich nie pokazuje |
 | `meta/setup` | `adminUid` – znacznik, że konto administratora już istnieje |
 
@@ -74,7 +74,7 @@ Repozytorium `guldorf/butla`, gałąź `main`, katalog główny → **Settings �
 
 ## Dosładzanie
 
-- Od cichej fermentacji w lewym górnym rogu ramki z butlą: zielone kostki cukru (1 kostka = 1 łyżka ≈ 12 g), guzik „+ łyżka” i „−” (cofnięcie). Każde kliknięcie zapisuje się w historii; dosłodzony cukier wlicza się do szacunku słodkości (g/l). Nie przechodzi na klony – każdą butlę dosładza się do smaku osobno.
+- Od cichej fermentacji w lewym górnym rogu ramki z butlą: zielone kostki cukru (1 kostka = 1 łyżeczka ≈ 5 g), guzik „+ łyżeczka” i „−” (cofnięcie). Każde kliknięcie zapisuje się w historii; dosłodzony cukier wlicza się do szacunku słodkości (g/l). Nie przechodzi na klony – każdą butlę dosładza się do smaku osobno.
 
 ## Oś czasu i dźwięk
 
