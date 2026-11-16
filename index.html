@@ -97,6 +97,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .bxtip{position:fixed;z-index:40;pointer-events:none;background:var(--ink);color:var(--on-ink);font-size:12px;padding:4px 8px;border-radius:6px;white-space:nowrap}
 .vessel .alarm{margin:0 4px 6px}
 .vessel.fu .alarm{display:none}
+/* pasek z nazwą wybranego wina – przykleja się u góry przy przewijaniu */
+.curbar{position:fixed;left:0;right:0;top:0;z-index:30;display:flex;align-items:center;gap:8px;
+  padding:calc(env(safe-area-inset-top,0px) + 9px) 16px 9px;background:var(--surface);border-bottom:2px solid var(--accent);
+  box-shadow:0 4px 14px rgba(0,0,0,.12);transform:translateY(-110%);visibility:hidden;transition:transform .25s ease,visibility .25s;cursor:pointer}
+.curbar.show{transform:none;visibility:visible}
+.curbar .cdot{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.curbar b{font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.curbar small{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto}
+@media (prefers-reduced-motion:reduce){.curbar{transition:none}}
 /* dosładzanie: zielone kostki cukru (1 kostka = 1 łyżeczka) */
 .sweet{position:absolute;left:1%;top:1%;width:26%;max-width:150px;z-index:2;display:grid;gap:6px;justify-items:start}
 .vessel.fu .sweet{display:none}
@@ -427,6 +436,7 @@ dialog h3{font-size:17px;margin:18px 0 8px}
 
   <div class="years" id="years" role="tablist" aria-label="Rocznik"></div>
   <div class="batches" id="batches"></div>
+  <div class="curbar" id="curBar" role="button" tabindex="0" aria-label="Wybrane wino – przewiń do listy partii"><span class="cdot"></span><b id="cbName"></b><small id="cbInfo"></small></div>
 
   <div class="emptyState hidden" id="emptyState">
     <h2>Nie ma jeszcze żadnej partii</h2>
@@ -1647,7 +1657,23 @@ function caption(){
   const nm = b => b.vessel ? `${b.name} (${b.vessel})` : b.name;
   if(state.mode==='ferm'){ const b=active(); $('vCap').textContent=b?`${nm(b)}: ${fmt(b.vol)} l z ${fmt(b.cap)} l, ${STAGES[b.stage].name.toLowerCase()}`:''; }
   else { const I=fusionInfo(); $('vCap').textContent = I ? `${nm(I.t)}: ${fmt(I.total)} l z ${fmt(I.t.cap)} l po zmieszaniu` : ''; }
+  renderCurBar();
 }
+// ---------- pasek z nazwą wybranego wina: przykleja się u góry, gdy lista partii zniknie z ekranu ----------
+function renderCurBar(){
+  const b=active(), bar=$('curBar'); if(!bar) return;
+  if(!b){ bar.classList.remove('show'); return; }
+  bar.style.setProperty('--c',batchColor(b));
+  $('cbName').textContent=b.name;
+  $('cbInfo').textContent=[b.vessel, `${fmt(b.vol)}/${fmt(b.cap)} l`, STAGES[b.stage].name.toLowerCase()].filter(Boolean).join(' · ');
+}
+(()=>{ const bar=$('curBar'), list=$('batches');
+  if('IntersectionObserver' in window) new IntersectionObserver(([e])=>{
+    bar.classList.toggle('show', e.boundingClientRect.bottom<0 && !!active() && !$('app').classList.contains('hidden'));
+  },{threshold:0}).observe(list);
+  const go=()=>list.scrollIntoView({behavior:'smooth',block:'start'});
+  bar.onclick=go; bar.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } };
+})();
 
 // ---------- pomiary Brix: wpisy historii z polem brix, wykres trendu ----------
 const brixOf = b => HIST.filter(h=>h.batchId===b.id && typeof h.brix==='number')
